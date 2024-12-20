@@ -100,7 +100,15 @@ resource "aws_ecs_task_definition" "app" {
           --active-defrag-cycle-min 25 \
           --active-defrag-cycle-max 75 \
           --active-defrag-max-scan-fields 1000 \
-          --jemalloc-bg-thread yes
+          --jemalloc-bg-thread yes \
+          --maxclients 100 \
+          --timeout 5 \
+          --tcp-keepalive 60 \
+          --appendfsync no \
+          --shutdown-timeout 5 \
+          --io-threads 2 \
+          --io-threads-do-reads yes \
+          --close-on-replica-write no
         EOT
       ]
       healthCheck = {
@@ -416,12 +424,12 @@ EOF
   volume {
     name = "app-data"
     efs_volume_configuration {
-      file_system_id = var.efs_file_system_id
-      root_directory = "/"
-      transit_encryption = "ENABLED"
+      file_system_id          = var.efs_file_system_id
+      root_directory          = "/"
+      transit_encryption      = "ENABLED"
       authorization_config {
         access_point_id = var.app_access_point_id
-        iam = "ENABLED"
+        iam            = "ENABLED"
       }
     }
   }
@@ -429,12 +437,12 @@ EOF
   volume {
     name = "redis-cache-data"
     efs_volume_configuration {
-      file_system_id = var.efs_file_system_id
-      root_directory = "/"
-      transit_encryption = "ENABLED"
+      file_system_id          = var.efs_file_system_id
+      root_directory          = "/"
+      transit_encryption      = "ENABLED"
       authorization_config {
         access_point_id = var.redis_cache_access_point_id
-        iam = "ENABLED"
+        iam            = "ENABLED"
       }
     }
   }
@@ -442,17 +450,18 @@ EOF
   volume {
     name = "redis-state-data"
     efs_volume_configuration {
-      file_system_id = var.efs_file_system_id
-      root_directory = "/"
-      transit_encryption = "ENABLED"
+      file_system_id          = var.efs_file_system_id
+      root_directory          = "/"
+      transit_encryption      = "ENABLED"
       authorization_config {
         access_point_id = var.redis_state_access_point_id
-        iam = "ENABLED"
+        iam            = "ENABLED"
       }
     }
   }
 
-  tags = merge(var.tags, {
-    Name = "vimbiso-pay-task-${var.environment}"
-  })
+  tags = {
+    Name        = "vimbiso-pay-task-${var.environment}"
+    Environment = var.environment
+  }
 }

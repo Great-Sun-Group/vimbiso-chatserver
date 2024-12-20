@@ -42,8 +42,6 @@ class RedisConfig:
             "health_check_interval": 30,
             "max_connections": 20,
             "decode_responses": True,
-            "charset": "utf-8",
-            "encoding": "utf-8",
             "retry_on_error": [ConnectionError, TimeoutError],
             "retry_on_timeout": True
         }
