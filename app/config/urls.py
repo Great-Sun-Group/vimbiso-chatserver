@@ -1,3 +1,5 @@
+import time
+import logging
 from core.api.tests import test_integrations
 from core.api.views import (CredexCloudApiWebhook, CredexSendMessageWebhook,
                             WelcomeMessage, WipeCache)
@@ -28,49 +30,87 @@ router.register(r'offers', views.OfferViewSet, basename='offer')
 @permission_classes([AllowAny])
 @throttle_classes([HealthCheckRateThrottle])
 def health_check(request):
+    """
+    Enhanced health check endpoint that provides detailed system health status
+    """
     status_info = {
-        "status": "ok",
-        "message": "Service is healthy",
+        "status": "healthy",
+        "message": "Service health status",
+        "timestamp": int(time.time()),
         "components": {
-            "cache_redis": "unknown",
-            "state_redis": "unknown"
+            "cache_redis": {
+                "status": "unknown",
+                "details": {}
+            },
+            "state_redis": {
+                "status": "unknown",
+                "details": {}
+            }
         }
     }
 
     # Check cache Redis
     try:
+        # Test basic connectivity
         cache.set("health_check", "ok", 10)
         result = cache.get("health_check")
-        status_info["components"]["cache_redis"] = "connected" if result == "ok" else "error"
+
+        if result == "ok":
+            status_info["components"]["cache_redis"]["status"] = "healthy"
+            # Get cache backend info if possible
+            if hasattr(cache, '_cache'):
+                client = cache._cache.get_client()
+                if hasattr(client, 'info'):
+                    info = client.info()
+                    status_info["components"]["cache_redis"]["details"] = {
+                        "connected_clients": info.get('connected_clients', 'N/A'),
+                        "used_memory": info.get('used_memory_human', 'N/A'),
+                        "role": info.get('role', 'N/A')
+                    }
+        else:
+            status_info["components"]["cache_redis"]["status"] = "degraded"
+
     except Exception as e:
-        import logging
         logger = logging.getLogger("django")
         logger.warning(f"Cache Redis check failed: {str(e)}")
-        status_info["components"]["cache_redis"] = "error"
+        status_info["components"]["cache_redis"]["status"] = "unhealthy"
+        status_info["components"]["cache_redis"]["error"] = str(e)
 
-    # Check state Redis
+    # Check state Redis using enhanced health check
     try:
-        state_redis = RedisConfig().get_client()
-        state_redis.set("health_check", "ok", 10)
-        result = state_redis.get("health_check")
-        status_info["components"]["state_redis"] = "connected" if result == "ok" else "error"
+        redis_config = RedisConfig()
+        health_info = redis_config.check_health()
+
+        status_info["components"]["state_redis"].update({
+            "status": health_info["status"],
+            "details": health_info["details"]
+        })
+
+        if health_info["errors"]:
+            status_info["components"]["state_redis"]["errors"] = health_info["errors"]
+
     except Exception as e:
-        import logging
         logger = logging.getLogger("django")
         logger.warning(f"State Redis check failed: {str(e)}")
-        status_info["components"]["state_redis"] = "error"
+        status_info["components"]["state_redis"]["status"] = "unhealthy"
+        status_info["components"]["state_redis"]["error"] = str(e)
 
     # Determine overall status
-    if all(v == "connected" for v in status_info["components"].values()):
-        status_info["status"] = "ok"
-        return JsonResponse(status_info)
-    elif all(v == "error" for v in status_info["components"].values()):
-        status_info["status"] = "error"
-        status_info["message"] = "All Redis connections failed"
-        return JsonResponse(status_info, status=500)
-    else:
+    component_statuses = [
+        comp["status"] for comp in status_info["components"].values()
+    ]
+
+    if any(status == "unhealthy" for status in component_statuses):
+        status_info["status"] = "unhealthy"
+        status_info["message"] = "One or more components are unhealthy"
+        return JsonResponse(status_info, status=503)
+    elif any(status == "degraded" for status in component_statuses):
         status_info["status"] = "degraded"
-        status_info["message"] = "Some Redis connections failed"
+        status_info["message"] = "One or more components are degraded"
+        return JsonResponse(status_info, status=200)
+    else:
+        status_info["status"] = "healthy"
+        status_info["message"] = "All components are healthy"
         return JsonResponse(status_info, status=200)
 
 

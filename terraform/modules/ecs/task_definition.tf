@@ -71,7 +71,7 @@ resource "aws_ecs_task_definition" "app" {
         # Start Redis with proper user and fixed memory limit
         exec gosu redis redis-server \
           --appendonly yes \
-          --appendfsync everysec \
+          --appendfsync no \
           --auto-aof-rewrite-percentage 100 \
           --auto-aof-rewrite-min-size 64mb \
           --aof-load-truncated yes \
@@ -85,7 +85,22 @@ resource "aws_ecs_task_definition" "app" {
           --maxmemory-policy allkeys-lru \
           --maxmemory ${floor(var.task_memory * 0.2 * 0.95)}mb \
           --save "" \
-          --stop-writes-on-bgsave-error no
+          --stop-writes-on-bgsave-error no \
+          --no-appendfsync-on-rewrite yes \
+          --aof-rewrite-incremental-fsync yes \
+          --dynamic-hz yes \
+          --lazyfree-lazy-eviction yes \
+          --lazyfree-lazy-expire yes \
+          --lazyfree-lazy-server-del yes \
+          --replica-lazy-flush yes \
+          --activedefrag yes \
+          --active-defrag-ignore-bytes 100mb \
+          --active-defrag-threshold-lower 10 \
+          --active-defrag-threshold-upper 100 \
+          --active-defrag-cycle-min 25 \
+          --active-defrag-cycle-max 75 \
+          --active-defrag-max-scan-fields 1000 \
+          --jemalloc-bg-thread yes
         EOT
       ]
       healthCheck = {
@@ -159,7 +174,7 @@ resource "aws_ecs_task_definition" "app" {
         # Start Redis with proper user and fixed memory limit
         exec gosu redis redis-server \
           --appendonly yes \
-          --appendfsync everysec \
+          --appendfsync no \
           --auto-aof-rewrite-percentage 100 \
           --auto-aof-rewrite-min-size 64mb \
           --aof-load-truncated yes \
@@ -173,7 +188,22 @@ resource "aws_ecs_task_definition" "app" {
           --maxmemory-policy allkeys-lru \
           --maxmemory ${floor(var.task_memory * 0.2 * 0.95)}mb \
           --save "" \
-          --stop-writes-on-bgsave-error no
+          --stop-writes-on-bgsave-error no \
+          --no-appendfsync-on-rewrite yes \
+          --aof-rewrite-incremental-fsync yes \
+          --dynamic-hz yes \
+          --lazyfree-lazy-eviction yes \
+          --lazyfree-lazy-expire yes \
+          --lazyfree-lazy-server-del yes \
+          --replica-lazy-flush yes \
+          --activedefrag yes \
+          --active-defrag-ignore-bytes 100mb \
+          --active-defrag-threshold-lower 10 \
+          --active-defrag-threshold-upper 100 \
+          --active-defrag-cycle-min 25 \
+          --active-defrag-cycle-max 75 \
+          --active-defrag-max-scan-fields 1000 \
+          --jemalloc-bg-thread yes
         EOT
       ]
       healthCheck = {
