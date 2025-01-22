@@ -1,5 +1,5 @@
 variable "environment" {
-  description = "Environment (production/development)"
+  description = "The deployment environment (development, production)"
   type        = string
 }
 
@@ -14,7 +14,12 @@ variable "public_subnet_ids" {
 }
 
 variable "alb_security_group_id" {
-  description = "Security group ID for the ALB"
+  description = "Security group ID for ALB"
+  type        = string
+}
+
+variable "certificate_arn" {
+  description = "ARN of ACM certificate"
   type        = string
 }
 
@@ -31,18 +36,19 @@ variable "health_check_port" {
 }
 
 variable "deregistration_delay" {
-  description = "Amount of time to wait for in-flight requests to complete before deregistering a target"
+  description = "Amount time to wait before deregistering targets"
   type        = number
   default     = 60
 }
 
-variable "certificate_arn" {
-  description = "ARN of the ACM certificate to use for HTTPS"
-  type        = string
-}
-
 variable "tags" {
-  description = "Tags to apply to resources"
+  description = "Common resource tags"
   type        = map(string)
   default     = {}
+}
+
+variable "enable_https" {
+  description = "Whether to enable HTTPS listener. Set to false for initial deployment before certificate is validated."
+  type        = bool
+  default     = false
 }

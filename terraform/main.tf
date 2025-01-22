@@ -16,9 +16,10 @@ module "networking" {
 module "route53_cert" {
   source = "./modules/route53_cert"
 
-  environment  = var.environment
-  domain_name = "${local.current_env.subdomain}.${local.current_env.dev_domain_base}"
-  tags        = local.common_tags
+  environment        = var.environment
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
+  create_dns_records = false  # Set to false initially since root zone is not yet available
+  tags              = local.common_tags
 }
 
 # Load Balancer Module
@@ -63,7 +64,6 @@ module "iam" {
   environment              = var.environment
   efs_file_system_arn     = module.efs.file_system_arn
   app_access_point_arn    = module.efs.app_access_point_arn
-  redis_state_access_point_arn = module.efs.redis_state_access_point_arn
   cloudwatch_log_group_arn = "arn:aws:logs:${local.current_env.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/vimbiso-pay-${var.environment}:*"
   region                  = local.current_env.aws_region
   account_id              = data.aws_caller_identity.current.account_id
@@ -100,7 +100,6 @@ module "ecs" {
   docker_image              = var.docker_image
   efs_file_system_id        = module.efs.file_system_id
   app_access_point_id       = module.efs.app_access_point_id
-  redis_state_access_point_id = module.efs.redis_state_access_point_id
   efs_mount_targets         = module.efs.mount_target_ids
   task_cpu                  = local.current_env.ecs_task.cpu
   task_memory               = local.current_env.ecs_task.memory
@@ -149,8 +148,8 @@ module "route53_dns" {
   source = "./modules/route53_dns"
 
   environment        = var.environment
-  domain_name       = "${local.current_env.subdomain}.${local.current_env.dev_domain_base}"
-  create_dns_records = true
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
+  create_dns_records = false  # Set to false initially since root zone is not yet available
   alb_dns_name      = module.loadbalancer.alb_dns_name
   alb_zone_id       = module.loadbalancer.alb_zone_id
   health_check_id   = module.health_checks.health_check_id

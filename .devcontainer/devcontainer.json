@@ -18,7 +18,8 @@
                 "saoudrizwan.claude-dev",
                 "github.vscode-github-actions",
                 "ms-azuretools.vscode-docker",
-                "hashicorp.terraform"
+                "hashicorp.terraform",
+                "bierner.markdown-mermaid"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",

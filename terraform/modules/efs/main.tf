@@ -49,36 +49,17 @@ resource "aws_efs_access_point" "app_data" {
   })
 }
 
-# Redis State Access Point
-resource "aws_efs_access_point" "redis_state" {
-  file_system_id = aws_efs_file_system.main.id
-
-  posix_user {
-    gid = 999  # Alpine Redis group
-    uid = 999  # Alpine Redis user
-  }
-
-  root_directory {
-    path = "/redis/state"  # Dedicated state directory
-    creation_info {
-      owner_gid   = 999  # Alpine Redis group
-      owner_uid   = 999  # Alpine Redis user
-      permissions = "755"
-    }
-  }
-
-  tags = merge(var.tags, {
-    Name = "vimbiso-pay-redis-state-ap-${var.environment}"
-  })
-}
-
-# Mount Targets (one per subnet)
+# Mount Targets with static map keys
 resource "aws_efs_mount_target" "main" {
-  count = length(var.private_subnet_ids)
+  for_each = { for idx, subnet_id in var.private_subnet_ids : idx => subnet_id }
 
   file_system_id  = aws_efs_file_system.main.id
-  subnet_id       = var.private_subnet_ids[count.index]
+  subnet_id       = each.value
   security_groups = [var.efs_security_group_id]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # EFS File System Policy
@@ -117,8 +98,7 @@ resource "aws_efs_file_system_policy" "main" {
         Condition = {
           StringEquals = {
             "elasticfilesystem:AccessPointArn": [
-              aws_efs_access_point.app_data.arn,
-              aws_efs_access_point.redis_state.arn
+              aws_efs_access_point.app_data.arn
             ]
           }
         }

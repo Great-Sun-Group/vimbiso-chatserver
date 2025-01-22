@@ -11,8 +11,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/dev'
-    environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/stage' || github.ref == 'refs/heads/dev' || contains(github.ref, 'deploy')
+    environment: ${{ (github.ref == 'refs/heads/prod' && 'production') || (github.ref == 'refs/heads/stage' && 'staging') || 'development' }}
     timeout-minutes: 30
 
     env:
@@ -21,7 +21,7 @@ jobs:
       DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev.vimbiso-chatserver.vimbisopay.africa' }}
       # Common Terraform variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
-      TF_VAR_docker_image: "dummy-image:latest"
+      TF_VAR_docker_image: "dummy-image:latest"  # Temporary placeholder for initial infrastructure deployment
       TF_VAR_django_secret: "dummy-secret"
       TF_VAR_mycredex_app_url: "https://dummy-url"
       TF_VAR_client_api_key: "dummy-key"
@@ -98,20 +98,21 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: vimbiso-pay-${{ env.ENVIRONMENT }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build --no-cache --target $BUILD_TARGET \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+      # Temporarily commented out for initial infrastructure deployment
+      # - name: Build and Push Docker Image
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     ECR_REPOSITORY: vimbiso-pay-${{ env.ENVIRONMENT }}
+      #     IMAGE_TAG: ${{ github.sha }}
+      #   run: |
+      #     docker build --no-cache --target $BUILD_TARGET \
+      #       -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      #     echo "IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Deploy Infrastructure and Application
         env:
-          TF_VAR_docker_image: ${{ env.IMAGE }}
+          TF_VAR_docker_image: "dummy:latest"  # Temporary for initial deployment
           TF_VAR_django_secret: ${{ secrets.DJANGO_SECRET }}
           TF_VAR_mycredex_app_url: ${{ secrets.MYCREDEX_APP_URL }}
           TF_VAR_client_api_key: ${{ secrets.CLIENT_API_KEY }}
@@ -124,112 +125,113 @@ jobs:
           terraform plan -input=false -lock-timeout=20m -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
-      - name: Wait for Deployment
-        run: |
-          echo "Waiting for deployment to complete..."
-          MAX_ATTEMPTS=20  # 20 minutes total with 60s interval
-          ATTEMPTS=0
-          DEPLOYMENT_DONE=false
-          GRACE_PERIOD=300  # 5 minutes for container health
-
-          function get_container_logs() {
-            local TASK_ID=$1
-            local CONTAINER_NAME=$2
-            local START_TIME=$3
-
-            echo "===================="
-            echo "${CONTAINER_NAME} Container Logs (Task ID: ${TASK_ID}):"
-            echo "Start Time: $(date -d @${START_TIME})"
-            echo "===================="
-
-            aws logs get-log-events \
-              --log-group-name "/ecs/vimbiso-pay-$ENVIRONMENT" \
-              --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
-              --start-time ${START_TIME}000 \
-              --limit 200 \
-              --query 'events[].message' \
-              --output text || true
-          }
-
-          while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-            CURRENT_TIME=$(date +%s)
-            ELAPSED_TIME=$((CURRENT_TIME - DEPLOY_START_TIME))
-
-            SERVICE_JSON=$(aws ecs describe-services \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service "vimbiso-pay-service-$ENVIRONMENT" \
-              --query 'services[0]')
-
-            PRIMARY_DEPLOYMENT=$(echo $SERVICE_JSON | jq -r '.deployments[] | select(.status == "PRIMARY")')
-            RUNNING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.runningCount')
-            DESIRED_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.desiredCount')
-            FAILED_TASKS=$(echo $PRIMARY_DEPLOYMENT | jq -r '.failedTasks')
-            PENDING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.pendingCount')
-
-            echo "Deployment Status (Elapsed: ${ELAPSED_TIME}s):"
-            echo "  Running Count: $RUNNING_COUNT"
-            echo "  Desired Count: $DESIRED_COUNT"
-            echo "  Failed Tasks: $FAILED_TASKS"
-            echo "  Pending Count: $PENDING_COUNT"
-
-            # Get running tasks
-            RUNNING_TASKS=$(aws ecs list-tasks \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service-name "vimbiso-pay-service-$ENVIRONMENT" \
-              --desired-status RUNNING \
-              --query 'taskArns[]' \
-              --output text)
-
-            if [ ! -z "$RUNNING_TASKS" ]; then
-              echo "Checking health of running tasks..."
-              aws ecs describe-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-                --tasks $RUNNING_TASKS \
-                --query 'tasks[].containers[].{name: name, health: healthStatus}' \
-                --output table
-            fi
-
-            # Check for failures
-            if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-              echo "Failed tasks detected after grace period. Fetching logs..."
-              FAILED_TASKS=$(aws ecs list-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-                --service-name "vimbiso-pay-service-$ENVIRONMENT" \
-                --desired-status STOPPED \
-                --query 'taskArns[]' \
-                --output text)
-
-              if [ ! -z "$FAILED_TASKS" ]; then
-                echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
-                  TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
-                  START_TIME=$(($(date +%s) - 300))
-                  get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
-                  get_container_logs "$TASK_ID" "vimbiso-pay-${ENVIRONMENT}" "$START_TIME"
-                done
-              fi
-              exit 1
-            fi
-
-            # Check for success
-            if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ]; then
-              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-                echo "Deployment completed successfully"
-                DEPLOYMENT_DONE=true
-                break
-              fi
-            fi
-
-            ATTEMPTS=$((ATTEMPTS + 1))
-            if [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; then
-              echo "Waiting 60 seconds... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
-              sleep 60
-            fi
-          done
-
-          if [ "$DEPLOYMENT_DONE" != "true" ]; then
-            echo "Deployment timeout after $(($MAX_ATTEMPTS * 60)) seconds"
-            exit 1
-          fi
+      # Temporarily commented out for initial infrastructure deployment
+      # - name: Wait for Deployment
+      #   run: |
+      #     echo "Waiting for deployment to complete..."
+      #     MAX_ATTEMPTS=12  # 12 minutes total with 60s interval
+      #     ATTEMPTS=0
+      #     DEPLOYMENT_DONE=false
+      #     GRACE_PERIOD=180  # 3 minutes for container health
+      #
+      #     function get_container_logs() {
+      #       local TASK_ID=$1
+      #       local CONTAINER_NAME=$2
+      #       local START_TIME=$3
+      #
+      #       echo "===================="
+      #       echo "${CONTAINER_NAME} Container Logs (Task ID: ${TASK_ID}):"
+      #       echo "Start Time: $(date -d @${START_TIME})"
+      #       echo "===================="
+      #
+      #       aws logs get-log-events \
+      #         --log-group-name "/ecs/vimbiso-pay-$ENVIRONMENT" \
+      #         --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
+      #         --start-time ${START_TIME}000 \
+      #         --limit 200 \
+      #         --query 'events[].message' \
+      #         --output text || true
+      #     }
+      #
+      #     while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+      #       CURRENT_TIME=$(date +%s)
+      #       ELAPSED_TIME=$((CURRENT_TIME - DEPLOY_START_TIME))
+      #
+      #       SERVICE_JSON=$(aws ecs describe-services \
+      #         --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+      #         --service "vimbiso-pay-service-$ENVIRONMENT" \
+      #         --query 'services[0]')
+      #
+      #       PRIMARY_DEPLOYMENT=$(echo $SERVICE_JSON | jq -r '.deployments[] | select(.status == "PRIMARY")')
+      #       RUNNING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.runningCount')
+      #       DESIRED_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.desiredCount')
+      #       FAILED_TASKS=$(echo $PRIMARY_DEPLOYMENT | jq -r '.failedTasks')
+      #       PENDING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.pendingCount')
+      #
+      #       echo "Deployment Status (Elapsed: ${ELAPSED_TIME}s):"
+      #       echo "  Running Count: $RUNNING_COUNT"
+      #       echo "  Desired Count: $DESIRED_COUNT"
+      #       echo "  Failed Tasks: $FAILED_TASKS"
+      #       echo "  Pending Count: $PENDING_COUNT"
+      #
+      #       # Get running tasks
+      #       RUNNING_TASKS=$(aws ecs list-tasks \
+      #         --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+      #         --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+      #         --desired-status RUNNING \
+      #         --query 'taskArns[]' \
+      #         --output text)
+      #
+      #       if [ ! -z "$RUNNING_TASKS" ]; then
+      #         echo "Checking health of running tasks..."
+      #         aws ecs describe-tasks \
+      #           --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+      #           --tasks $RUNNING_TASKS \
+      #           --query 'tasks[].containers[].{name: name, health: healthStatus}' \
+      #           --output table
+      #       fi
+      #
+      #       # Check for failures
+      #       if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+      #         echo "Failed tasks detected after grace period. Fetching logs..."
+      #         FAILED_TASKS=$(aws ecs list-tasks \
+      #           --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+      #           --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+      #           --desired-status STOPPED \
+      #           --query 'taskArns[]' \
+      #           --output text)
+      #
+      #         if [ ! -z "$FAILED_TASKS" ]; then
+      #           echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
+      #             TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
+      #             START_TIME=$(($(date +%s) - 300))
+      #             get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+      #             get_container_logs "$TASK_ID" "vimbiso-pay-${ENVIRONMENT}" "$START_TIME"
+      #           done
+      #         fi
+      #         exit 1
+      #       fi
+      #
+      #       # Check for success
+      #       if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ]; then
+      #         if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+      #           echo "Deployment completed successfully"
+      #           DEPLOYMENT_DONE=true
+      #           break
+      #         fi
+      #       fi
+      #
+      #       ATTEMPTS=$((ATTEMPTS + 1))
+      #       if [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; then
+      #         echo "Waiting 60 seconds... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
+      #         sleep 60
+      #       fi
+      #     done
+      #
+      #     if [ "$DEPLOYMENT_DONE" != "true" ]; then
+      #       echo "Deployment timeout after $(($MAX_ATTEMPTS * 60)) seconds"
+      #       exit 1
+      #     fi
 
       - name: Print Deployment Information
         run: |

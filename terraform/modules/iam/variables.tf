@@ -19,11 +19,6 @@ variable "app_access_point_arn" {
   type        = string
 }
 
-variable "redis_state_access_point_arn" {
-  description = "ARN of the Redis state EFS access point"
-  type        = string
-}
-
 variable "cloudwatch_log_group_arn" {
   description = "ARN of the CloudWatch log group"
   type        = string

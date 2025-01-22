@@ -1,12 +1,12 @@
 {
   "environment": "production",
-  "subdomain": "whatsapp",
-  "dev_domain_base": "vimbisopay.africa",
+  "subdomain": "vimbiso-chatserver",
+  "domain_base": "vimbisopay.africa",
   "aws_region": "af-south-1",
   "vpc_cidr": "10.0.0.0/16",
   "ecs_task": {
-    "cpu": "2048",
-    "memory": "4096"
+    "cpu": "1024",
+    "memory": "2048"
   },
   "az_count": 2,
   "autoscaling": {
@@ -14,5 +14,10 @@
     "max_capacity": 4,
     "cpu_threshold": 80,
     "memory_threshold": 80
+  },
+  "django_env": {
+    "debug": true,
+    "django_log_level": "INFO",
+    "app_log_level": "INFO"
   }
 }

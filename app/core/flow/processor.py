@@ -17,7 +17,7 @@ from typing import Any, Dict
 
 from core.error.exceptions import ComponentException
 from core.error.handler import ErrorHandler
-from core.error.types import INVALID_ACTION_MESSAGE, ValidationResult
+from core.error.types import ValidationResult
 from core.messaging.service import MessagingService
 from core.messaging.types import Message, MessageType, TextContent
 from core.messaging.utils import get_recipient
@@ -78,9 +78,6 @@ class FlowProcessor:
                 logger.debug("No valid message content")
                 return None
 
-            # Create message recipient for error handling
-            recipient = get_recipient(self.state_manager)
-
             # Get existing state before processing any message
             current_state = self.state_manager.get_state_value("component_data")
 
@@ -136,14 +133,43 @@ class FlowProcessor:
                 except Exception as e:
                     logger.error(f"Failed to initialize state: {str(e)}")
                     return None
-            # If no state and not a greeting, send invalid action message
+            # If no state and not a greeting, trigger login flow
             elif not current_state:
-                logger.debug("No state found - sending invalid action message")
-                self.messaging.send_text(
-                    recipient=recipient,
-                    text=INVALID_ACTION_MESSAGE
-                )
-                return None
+                logger.debug("No state found - triggering login flow")
+                try:
+                    # Initialize channel with preserved info
+                    channel_type = self.state_manager.get_channel_type()
+                    channel_id = self.state_manager.get_channel_id()
+                    current_message = self.state_manager.get_incoming_message()
+
+                    # Clear all state (mock_testing is preserved)
+                    self.state_manager.clear_all_state()
+
+                    # Reinitialize channel
+                    self.state_manager.initialize_channel(
+                        channel_type=channel_type,
+                        channel_id=channel_id
+                    )
+
+                    # Restore message
+                    if current_message:
+                        self.state_manager.set_incoming_message(current_message)
+
+                    # Start login flow through headquarters
+                    self.state_manager.transition_flow(
+                        path="login",
+                        component="Greeting"
+                    )
+
+                    # Get updated state after initialization
+                    current_state = self.state_manager.get_state_value("component_data")
+                    if not current_state:
+                        logger.error("Failed to initialize component state")
+                        return None
+
+                except Exception as e:
+                    logger.error(f"Failed to initialize state: {str(e)}")
+                    return None
 
             context = current_state.get("path")
             component = current_state.get("component")
@@ -208,7 +234,7 @@ class FlowProcessor:
             )
             recipient = get_recipient(self.state_manager)
             content = TextContent(body=error_response["error"]["message"])
-            return Message(content=content)
+            return Message(content=content, recipient=recipient)
 
         except Exception as e:
             # Handle system errors
@@ -221,7 +247,7 @@ class FlowProcessor:
             )
             recipient = get_recipient(self.state_manager)
             content = TextContent(body=error_response["error"]["message"])
-            return Message(content=content)
+            return Message(content=content, recipient=recipient)
 
     def _extract_message_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Extract message data from payload
