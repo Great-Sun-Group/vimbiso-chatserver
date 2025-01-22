@@ -210,3 +210,13 @@ resource "aws_iam_role_policy" "kms" {
     ]
   })
 }
+
+# ECS service linked role - managed by AWS
+resource "aws_iam_service_linked_role" "ecs" {
+  aws_service_name = "ecs.amazonaws.com"
+  description      = "Service-linked role for ECS"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
