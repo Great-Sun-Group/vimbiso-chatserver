@@ -176,8 +176,7 @@ resource "aws_iam_role_policy" "ecs_task_efs" {
           "elasticfilesystem:ClientWrite"
         ]
         Resource = [
-          var.app_access_point_arn,
-          var.redis_state_access_point_arn
+          var.app_access_point_arn
         ]
       }
     ]

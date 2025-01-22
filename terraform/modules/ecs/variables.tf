@@ -106,11 +106,6 @@ variable "app_access_point_id" {
   type        = string
 }
 
-variable "redis_state_access_point_id" {
-  description = "ID of the Redis state EFS access point"
-  type        = string
-}
-
 variable "efs_mount_targets" {
   description = "List of EFS mount target IDs to depend on"
   type        = list(string)
