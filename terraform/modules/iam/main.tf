@@ -218,5 +218,9 @@ resource "aws_iam_service_linked_role" "ecs" {
 
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      tags,
+      tags_all
+    ]
   }
 }
