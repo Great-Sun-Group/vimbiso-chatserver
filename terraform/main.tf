@@ -16,9 +16,10 @@ module "networking" {
 module "route53_cert" {
   source = "./modules/route53_cert"
 
-  environment  = var.environment
-  domain_name = "${local.current_env.subdomain}.${local.current_env.domain_base}"
-  tags        = local.common_tags
+  environment        = var.environment
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
+  create_dns_records = false  # Set to false initially since root zone is not yet available
+  tags              = local.common_tags
 }
 
 # Load Balancer Module
@@ -148,7 +149,7 @@ module "route53_dns" {
 
   environment        = var.environment
   domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
-  create_dns_records = true
+  create_dns_records = false  # Set to false initially since root zone is not yet available
   alb_dns_name      = module.loadbalancer.alb_dns_name
   alb_zone_id       = module.loadbalancer.alb_zone_id
   health_check_id   = module.health_checks.health_check_id
