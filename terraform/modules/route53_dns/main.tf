@@ -8,8 +8,9 @@ resource "aws_route53_zone" "app" {
   })
 }
 
-# Data source to fetch root zone
+# Data source to fetch root zone - only when creating DNS records
 data "aws_route53_zone" "root" {
+  count        = var.create_dns_records ? 1 : 0
   name         = regex("(?:[^.]+\\.)*([^.]+\\.[^.]+)$", var.domain_name)[0]
   private_zone = false
 }
@@ -18,7 +19,7 @@ data "aws_route53_zone" "root" {
 resource "aws_route53_record" "ns" {
   count = var.create_dns_records ? 1 : 0
 
-  zone_id = data.aws_route53_zone.root.zone_id
+  zone_id = data.aws_route53_zone.root[0].zone_id
   name    = var.domain_name
   type    = "NS"
   ttl     = "300"  # Increased TTL for better propagation
@@ -41,13 +42,19 @@ resource "aws_route53_record" "app" {
   }
 }
 
+# Output nameservers for the app zone
+output "nameservers" {
+  description = "Nameservers for the app zone"
+  value       = var.create_dns_records ? aws_route53_zone.app[0].name_servers : []
+}
+
 # Output zone information for debugging
 output "zone_info" {
   value = {
-    root_zone_id = data.aws_route53_zone.root.zone_id
-    root_zone_name = data.aws_route53_zone.root.name
-    app_zone_id = var.create_dns_records ? aws_route53_zone.app[0].zone_id : null
-    nameservers = var.create_dns_records ? aws_route53_zone.app[0].name_servers : null
+    root_zone_id   = var.create_dns_records ? data.aws_route53_zone.root[0].zone_id : null
+    root_zone_name = var.create_dns_records ? data.aws_route53_zone.root[0].name : null
+    app_zone_id    = var.create_dns_records ? aws_route53_zone.app[0].zone_id : null
+    nameservers    = var.create_dns_records ? aws_route53_zone.app[0].name_servers : []
   }
   description = "Zone information for debugging DNS issues"
 }
