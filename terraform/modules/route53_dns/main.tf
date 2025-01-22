@@ -41,20 +41,3 @@ resource "aws_route53_record" "app" {
     evaluate_target_health = true
   }
 }
-
-# Output nameservers for the app zone
-output "nameservers" {
-  description = "Nameservers for the app zone"
-  value       = var.create_dns_records ? aws_route53_zone.app[0].name_servers : []
-}
-
-# Output zone information for debugging
-output "zone_info" {
-  value = {
-    root_zone_id   = var.create_dns_records ? data.aws_route53_zone.root[0].zone_id : null
-    root_zone_name = var.create_dns_records ? data.aws_route53_zone.root[0].name : null
-    app_zone_id    = var.create_dns_records ? aws_route53_zone.app[0].zone_id : null
-    nameservers    = var.create_dns_records ? aws_route53_zone.app[0].name_servers : []
-  }
-  description = "Zone information for debugging DNS issues"
-}
