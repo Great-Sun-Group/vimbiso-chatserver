@@ -36,7 +36,9 @@ resource "aws_ecs_task_definition" "app" {
         "--bind", "0.0.0.0",
         "--port", tostring(var.redis_state_port),
         "--maxmemory-policy", "allkeys-lru",
-        "--maxmemory", "${tostring(floor(var.task_memory * 0.3 * 0.90))}mb"
+        "--maxmemory", "${tostring(floor(var.task_memory * 0.3 * 0.90))}mb",
+        "--save", "",           # Disable RDB persistence
+        "--appendonly", "no"    # Disable AOF persistence
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "redis-cli ping"]

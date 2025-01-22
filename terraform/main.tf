@@ -17,7 +17,7 @@ module "route53_cert" {
   source = "./modules/route53_cert"
 
   environment  = var.environment
-  domain_name = "${local.current_env.subdomain}.${local.current_env.dev_domain_base}"
+  domain_name = "${local.current_env.subdomain}.${local.current_env.domain_base}"
   tags        = local.common_tags
 }
 
@@ -149,7 +149,7 @@ module "route53_dns" {
   source = "./modules/route53_dns"
 
   environment        = var.environment
-  domain_name       = "${local.current_env.subdomain}.${local.current_env.dev_domain_base}"
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
   create_dns_records = true
   alb_dns_name      = module.loadbalancer.alb_dns_name
   alb_zone_id       = module.loadbalancer.alb_zone_id

@@ -4,8 +4,8 @@ resource "aws_ecs_service" "app" {
   cluster                           = aws_ecs_cluster.main.id
   task_definition                   = aws_ecs_task_definition.app.arn
   desired_count                     = var.min_capacity
-  deployment_minimum_healthy_percent = 0    # Allow all old tasks to be stopped since we don't need state transfer
-  deployment_maximum_percent        = 100  # No need for extra capacity since we start fresh
+  deployment_minimum_healthy_percent = 100  # Ensure no service interruption during deployments
+  deployment_maximum_percent        = 200  # Allow double capacity during deployments for zero-downtime updates
   scheduling_strategy               = "REPLICA"
   force_new_deployment             = false
   health_check_grace_period_seconds = 60    # Reduced to 1 minute since Redis starts fresh

@@ -187,9 +187,6 @@ resource "aws_lb" "main" {
     Name = "vimbiso-pay-alb-${var.environment}"
   })
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # Associate WAF Web ACL with ALB
