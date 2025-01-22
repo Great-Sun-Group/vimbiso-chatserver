@@ -186,7 +186,6 @@ resource "aws_lb" "main" {
   tags = merge(var.tags, {
     Name = "vimbiso-pay-alb-${var.environment}"
   })
-
 }
 
 # Associate WAF Web ACL with ALB
@@ -195,8 +194,9 @@ resource "aws_wafv2_web_acl_association" "main" {
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
 
-# HTTPS Listener with SSL termination
+# HTTPS Listener with SSL termination - conditional on enable_https
 resource "aws_lb_listener" "https" {
+  count             = var.enable_https ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = "443"
   protocol          = "HTTPS"
@@ -209,18 +209,31 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# HTTP Listener with redirect
+# HTTP Listener - forwards to target group if HTTPS not enabled, redirects to HTTPS if enabled
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    type = var.enable_https ? "redirect" : "forward"
+
+    dynamic "redirect" {
+      for_each = var.enable_https ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+
+    dynamic "forward" {
+      for_each = var.enable_https ? [] : [1]
+      content {
+        target_group {
+          arn = aws_lb_target_group.app.arn
+        }
+      }
     }
   }
 }
@@ -242,8 +255,10 @@ resource "aws_lb_listener_rule" "health_check_http" {
   }
 }
 
+# HTTPS health check rule - only created if HTTPS is enabled
 resource "aws_lb_listener_rule" "health_check_https" {
-  listener_arn = aws_lb_listener.https.arn
+  count        = var.enable_https ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
   priority     = 1
 
   action {

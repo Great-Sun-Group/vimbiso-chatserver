@@ -14,7 +14,7 @@ The initial deployment needs to use dummy values and a disabled container deploy
    - Sets up ECR repositories
    - Uses dummy values for sensitive variables
 
-2. In `terraform/main.tf`, both Route53 modules need to have DNS record creation disabled:
+2. In `terraform/main.tf`, both Route53 modules and the loadbalancer need to have features disabled:
 ```hcl
 module "route53_cert" {
   # ...
@@ -25,9 +25,14 @@ module "route53_dns" {
   # ...
   create_dns_records = false  # Will be changed to true after NS records are configured
 }
+
+module "loadbalancer" {
+  # ...
+  enable_https = false  # Will be changed to true after certificate is validated
+}
 ```
 
-3. The ful Docker build and deployment steps have to be commented out in the workflow:
+3. The full Docker build and deployment steps have to be commented out in the workflow:
 ```yaml
 # Temporarily commented out for initial infrastructure deployment
 # - name: Build and Push Docker Image
@@ -67,11 +72,25 @@ module "route53_dns" {
 2. Run deployment to enable DNS validation
    - Certificate validation may take up to 30 minutes
 
+### Stage 4: Enable HTTPS
+
+1. After certificate is validated, update `terraform/main.tf`:
+```hcl
+module "loadbalancer" {
+  # ...
+  enable_https = true  # Enable HTTPS now that certificate is valid
+}
+```
+
+2. Run deployment to enable HTTPS
+   - ALB will now use HTTPS with the validated certificate
+   - HTTP traffic will be redirected to HTTPS
+
 ## Full Application Deployment
 
-### Stage 4: Configure Secrets
+### Stage 5: Configure Secrets
 
-### Stage 5: Enable Application Deployment
+### Stage 6: Enable Application Deployment
 
 1. In `.github/workflows/deploy.yml`, uncomment and enable:
    - Docker build and push step
