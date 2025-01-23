@@ -21,7 +21,7 @@ module "loadbalancer" {
   public_subnet_ids     = module.networking.public_subnet_ids
   alb_security_group_id = module.networking.alb_security_group_id
   certificate_arn       = null
-  enable_https         = false  # Will be enabled after cert is created
+  enable_https         = true  # Enabled now that cert is created
   health_check_path     = "/health/"
   health_check_port     = 8000
   deregistration_delay  = 60
