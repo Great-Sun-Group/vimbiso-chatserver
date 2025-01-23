@@ -96,7 +96,8 @@
                 "elasticloadbalancing:RemoveTags",
                 "elasticloadbalancing:DescribeTargetGroupAttributes",
                 "elasticloadbalancing:ModifyTargetGroupAttributes",
-                "elasticloadbalancing:DescribeTags"
+                "elasticloadbalancing:DescribeTags",
+                "elasticloadbalancing:SetSecurityGroups"
             ],
             "Resource": "*"
         },
@@ -165,12 +166,14 @@
                 "iam:DetachRolePolicy",
                 "iam:TagRole",
                 "iam:PassRole",
-                "iam:CreateServiceLinkedRole"
+                "iam:CreateServiceLinkedRole",
+                "iam:GetServiceLinkedRoleDeletionStatus"
             ],
             "Resource": [
                 "arn:aws:iam::*:role/vimbiso-pay-*",
                 "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
-                "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+                "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+                "arn:aws:iam::*:role/aws-service-role/*"
             ]
         },
         {

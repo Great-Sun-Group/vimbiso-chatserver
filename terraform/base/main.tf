@@ -178,8 +178,15 @@ resource "aws_lb" "main" {
 }
 
 # ALB Target Group
+# Random suffix for target group to avoid naming conflicts
+resource "random_string" "target_group_suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
 resource "aws_lb_target_group" "app" {
-  name        = "vimbiso-pay-tg-${var.environment}"
+  name        = "vimbiso-pay-tg-${var.environment}-${random_string.target_group_suffix.result}"
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
