@@ -27,6 +27,7 @@
                 "ec2:DeleteVpc",
                 "ec2:DescribeVpcs",
                 "ec2:ModifyVpcAttribute",
+                "ec2:DescribeVpcAttribute",
                 "ec2:CreateSubnet",
                 "ec2:DeleteSubnet",
                 "ec2:DescribeSubnets",
@@ -56,7 +57,23 @@
                 "ec2:DescribeAddresses",
                 "ec2:AssociateRouteTable",
                 "ec2:DisassociateRouteTable",
-                "ec2:DescribeAvailabilityZones"
+                "ec2:DescribeAvailabilityZones",
+                "ec2:CreateTags",
+                "ec2:DeleteTags",
+                "ec2:DescribeTags",
+                "ec2:DescribeAccountAttributes"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricAlarm",
+                "cloudwatch:DeleteAlarms",
+                "cloudwatch:DescribeAlarms",
+                "cloudwatch:GetMetricStatistics",
+                "cloudwatch:ListMetrics",
+                "cloudwatch:PutMetricData"
             ],
             "Resource": "*"
         },
@@ -76,7 +93,10 @@
                 "elasticloadbalancing:DescribeListeners",
                 "elasticloadbalancing:ModifyListener",
                 "elasticloadbalancing:AddTags",
-                "elasticloadbalancing:RemoveTags"
+                "elasticloadbalancing:RemoveTags",
+                "elasticloadbalancing:DescribeTargetGroupAttributes",
+                "elasticloadbalancing:ModifyTargetGroupAttributes",
+                "elasticloadbalancing:DescribeTags"
             ],
             "Resource": "*"
         },
@@ -144,9 +164,14 @@
                 "iam:AttachRolePolicy",
                 "iam:DetachRolePolicy",
                 "iam:TagRole",
-                "iam:PassRole"
+                "iam:PassRole",
+                "iam:CreateServiceLinkedRole"
             ],
-            "Resource": "arn:aws:iam::*:role/vimbiso-pay-*"
+            "Resource": [
+                "arn:aws:iam::*:role/vimbiso-pay-*",
+                "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+                "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+            ]
         },
         {
             "Effect": "Allow",
@@ -181,7 +206,12 @@
                 "ecs:RunTask",
                 "ecs:StopTask",
                 "ecs:TagResource",
-                "ecs:UntagResource"
+                "ecs:UntagResource",
+                "ecs:PutClusterCapacityProviders",
+                "ecs:ListServices",
+                "ecs:ListContainerInstances",
+                "ecs:DescribeContainerInstances",
+                "ecs:ListTagsForResource"
             ],
             "Resource": "*"
         },

@@ -171,6 +171,10 @@ resource "aws_lb" "main" {
   tags = merge(var.tags, {
     Name = "vimbiso-pay-alb-${var.environment}"
   })
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ALB Target Group
@@ -195,6 +199,10 @@ resource "aws_lb_target_group" "app" {
   tags = merge(var.tags, {
     Name = "vimbiso-pay-tg-${var.environment}"
   })
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # HTTP Listener
