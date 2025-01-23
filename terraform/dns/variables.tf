@@ -35,6 +35,12 @@ variable "target_group_arn" {
   type        = string
 }
 
+variable "enable_https" {
+  description = "Whether to enable HTTPS listener and certificate validation. Set to false for initial deployment, true after DNS is configured."
+  type        = bool
+  default     = false
+}
+
 # Validation
 locals {
   valid_environments = ["production", "development"]

@@ -2,6 +2,12 @@ name: Deploy Infrastructure
 
 on:
   workflow_dispatch:
+    inputs:
+      initial_deploy:
+        description: 'Initial deployment (skips HTTPS setup until DNS is configured)'
+        type: boolean
+        default: true
+        required: true
 
 jobs:
   deploy-infrastructure:
@@ -16,6 +22,7 @@ jobs:
       # Common Terraform variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
       TF_VAR_domain: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
+      TF_VAR_enable_https: ${{ !inputs.initial_deploy }}
       # Dummy values for app variables (not used in infrastructure deployment)
       TF_VAR_docker_image: "dummy"
       TF_VAR_django_secret: "dummy"
