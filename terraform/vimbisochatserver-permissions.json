@@ -97,7 +97,8 @@
                 "elasticloadbalancing:DescribeTargetGroupAttributes",
                 "elasticloadbalancing:ModifyTargetGroupAttributes",
                 "elasticloadbalancing:DescribeTags",
-                "elasticloadbalancing:SetSecurityGroups"
+                "elasticloadbalancing:SetSecurityGroups",
+                "elasticloadbalancing:DescribeLoadBalancerAttributes"
             ],
             "Resource": "*"
         },
