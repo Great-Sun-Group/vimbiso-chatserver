@@ -41,9 +41,10 @@ resource "aws_route53_record" "cert_validation" {
 
 # Create A record for the application
 resource "aws_route53_record" "app" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = var.domain_name
-  type    = "A"
+  zone_id         = aws_route53_zone.main.zone_id
+  name            = var.domain_name
+  type            = "A"
+  allow_overwrite = true
 
   alias {
     name                   = var.alb_dns_name
