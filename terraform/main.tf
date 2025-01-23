@@ -36,7 +36,7 @@ module "route53_cert" {
 
   environment        = var.environment
   domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
-  create_dns_records = false
+  create_dns_records = true  # Enable DNS validation now that NS records are configured
   tags              = local.common_tags
 
   depends_on = [module.route53_dns]
@@ -153,7 +153,7 @@ module "route53_dns" {
   environment        = var.environment
   domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
   parent_domain     = local.current_env.base_domain
-  create_dns_records = false  # Start false until new NS records are added to root zone
+  create_dns_records = true  # Enable DNS records now that NS records are configured in root zone
   alb_dns_name      = module.loadbalancer.alb_dns_name
   alb_zone_id       = module.loadbalancer.alb_zone_id
   health_check_id   = module.health_checks.health_check_id
