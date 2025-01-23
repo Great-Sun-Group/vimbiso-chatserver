@@ -49,7 +49,6 @@ resource "aws_internet_gateway" "main" {
 # NAT Gateway (single for dev, multi for prod)
 resource "aws_eip" "nat" {
   count = var.environment == "production" ? var.az_count : 1
-  tags  = var.tags
 }
 
 resource "aws_nat_gateway" "main" {
