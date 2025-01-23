@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/stage' || github.ref == 'refs/heads/dev' || contains(github.ref, 'deploy')
     environment: ${{ (github.ref == 'refs/heads/prod' && 'production') || (github.ref == 'refs/heads/stage' && 'staging') || 'development' }}
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       ENVIRONMENT: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
