@@ -1,6 +1,6 @@
 # S3 bucket for ALB logs
 resource "aws_s3_bucket" "alb_logs" {
-  bucket        = "vimbiso-pay-alb-logs-${var.environment}"
+  bucket        = "vimbiso-pay-alb-logbucket${var.environment}"
   force_destroy = var.environment != "production"
 
   tags = merge(var.tags, {
