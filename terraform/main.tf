@@ -20,6 +20,8 @@ module "route53_cert" {
   domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
   create_dns_records = true  # NS records are now configured in root zone
   tags              = local.common_tags
+
+  depends_on = [module.route53_dns]  # Ensure zone exists before creating cert validation records
 }
 
 # Load Balancer Module
