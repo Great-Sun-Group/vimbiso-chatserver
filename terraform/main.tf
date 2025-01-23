@@ -36,7 +36,7 @@ module "route53_cert" {
 
   environment        = var.environment
   domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
-  create_dns_records = true
+  create_dns_records = false
   tags              = local.common_tags
 
   depends_on = [module.route53_dns]
