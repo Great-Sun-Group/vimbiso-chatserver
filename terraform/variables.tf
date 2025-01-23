@@ -62,3 +62,10 @@ variable "whatsapp_business_id" {
   type        = string
   sensitive   = true
 }
+
+# Infrastructure Configuration
+variable "enable_https" {
+  description = "Whether to enable HTTPS listener and certificate validation. Set to false for initial deployment, true after DNS is configured."
+  type        = bool
+  default     = false
+}

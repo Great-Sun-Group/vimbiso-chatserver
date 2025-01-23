@@ -55,8 +55,8 @@ jobs:
         run: |
           echo "Current environment: ${ENVIRONMENT}"
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          BUCKET_NAME="vimbiso-pay-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
-          TABLE_NAME="vimbiso-pay-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          BUCKET_NAME="vimbiso-chatserver-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          TABLE_NAME="vimbiso-chatserver-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
 
           if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
             aws s3api create-bucket --bucket "$BUCKET_NAME" --create-bucket-configuration LocationConstraint=af-south-1
@@ -83,7 +83,8 @@ jobs:
         id: plan
         run: |
           cd terraform
-          terraform plan -input=false -lock-timeout=20m -out=plan.tfplan
+          # Increase lock timeout for initial setup
+          terraform plan -input=false -lock-timeout=30m -out=plan.tfplan
 
           # Store plan summary
           echo "PLAN_SUMMARY<<EOF" >> $GITHUB_ENV
@@ -93,7 +94,7 @@ jobs:
       - name: Deploy Infrastructure
         run: |
           cd terraform
-          terraform apply -input=false -lock-timeout=20m plan.tfplan
+          terraform apply -input=false -lock-timeout=30m plan.tfplan
 
       - name: Output DNS Information
         run: |

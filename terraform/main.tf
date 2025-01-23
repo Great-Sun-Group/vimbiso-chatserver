@@ -48,12 +48,13 @@ module "dns" {
   source = "./dns"
 
   environment      = var.environment
-  domain_name     = local.current_env.domain_name
-  alb_arn         = module.base.alb_arn
-  alb_dns_name    = module.base.alb_dns_name
-  alb_zone_id     = module.base.alb_zone_id
+  domain_name      = local.current_env.domain_name
+  alb_arn          = module.base.alb_arn
+  alb_dns_name     = module.base.alb_dns_name
+  alb_zone_id      = module.base.alb_zone_id
   target_group_arn = module.base.target_group_arn
-  tags            = local.common_tags
+  enable_https     = var.enable_https
+  tags             = local.common_tags
 
   depends_on = [module.base]
 }
