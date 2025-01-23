@@ -1,6 +1,6 @@
 output "certificate_arn" {
   description = "The ARN of the certificate"
-  value       = var.create_dns_records ? data.aws_acm_certificate.app[0].arn : null
+  value       = try(data.aws_acm_certificate.app[0].arn, null)
 }
 
 output "domain_name" {

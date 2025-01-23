@@ -13,7 +13,7 @@ locals {
   debug = {
     domain_name = var.domain_name
     zone_id = var.create_dns_records ? data.aws_route53_zone.zone[0].zone_id : null
-    validation_options = var.create_dns_records ? try(data.aws_acm_certificate.app[0].domain_validation_options, []) : []
+    status = var.create_dns_records ? data.aws_acm_certificate.app[0].status : "not_found"
   }
 }
 
