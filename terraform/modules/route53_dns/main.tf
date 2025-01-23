@@ -1,6 +1,6 @@
 # Create the hosted zone for the environment
 resource "aws_route53_zone" "app" {
-  count = var.create_dns_records ? 1 : 0
+  count = 1
   name  = var.domain_name
 
   tags = merge(var.tags, {
