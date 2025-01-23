@@ -40,6 +40,7 @@ resource "aws_acm_certificate" "app" {
 
   lifecycle {
     create_before_destroy = true
+    prevent_destroy = true  # Prevent accidental destruction of certificate
   }
 }
 

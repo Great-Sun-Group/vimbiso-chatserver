@@ -19,6 +19,7 @@ The initial deployment needs to use dummy values and a disabled container deploy
 module "route53_cert" {
   # ...
   create_dns_records = false  # Will be changed to true after NS records are configured
+  use_existing_cert = false   # Will be changed to true after certificate is validated
 }
 
 module "route53_dns" {
@@ -61,6 +62,7 @@ NS Records:
 module "route53_cert" {
   # ...
   create_dns_records = true  # Enable DNS validation
+  use_existing_cert = false  # Still creating and validating certificate
 }
 
 module "route53_dns" {
@@ -78,7 +80,7 @@ module "route53_dns" {
 ```hcl
 module "route53_cert" {
   # ...
-  use_existing_cert = true  # Switch to using existing certificate instead of creating new one
+  use_existing_cert = true  # Switch to using existing validated certificate
 }
 
 module "loadbalancer" {
@@ -88,9 +90,10 @@ module "loadbalancer" {
 ```
 
 The module will automatically:
-- Stop managing the existing certificate
-- Look up and use the validated certificate
-- Enable HTTPS on the load balancer
+- Look up and use the existing validated certificate
+- Prevent any certificate recreation or destruction
+- Keep DNS validation records intact
+- Enable HTTPS on the load balancer using the existing certificate
 
 2. Run deployment to enable HTTPS
    - ALB will now use HTTPS with the validated certificate
