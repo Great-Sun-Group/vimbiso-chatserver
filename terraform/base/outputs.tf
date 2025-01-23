@@ -52,8 +52,3 @@ output "target_group_arn" {
   description = "ARN of the ALB target group"
   value       = aws_lb_target_group.app.arn
 }
-
-output "http_listener_arn" {
-  description = "ARN of the HTTP listener"
-  value       = aws_lb_listener.http.arn
-}
