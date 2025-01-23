@@ -40,22 +40,18 @@ output "dns_info" {
 
 output "dns_instructions" {
   description = "Instructions for DNS configuration"
-  value = local.current_env.env_prefix != "" ? (
-    "Development Environment DNS Setup:\n" +
-    "1. Ensure NS records for ${module.route53_dns.parent_domain} exist in ${local.current_env.base_domain}\n" +
-    "2. The following NS records will be created in ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name}:\n" +
-    "   ${jsonencode(module.route53_dns.nameservers)}\n\n" +
-    "Important Note About DNS Delegation:\n" +
-    "- If NS records were manually added to ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name},\n" +
-    "  they will be visible in DNS queries (dig) but not through the Route53 API\n" +
-    "- The terraform code needs the hosted zone to exist in Route53 as a proper resource\n" +
-    "- Ensure the zone is created through Route53 (not just NS records added manually)\n" +
-    "- You can verify this by checking the zone exists in the Route53 console"
-  ) : (
-    "Production Environment DNS Setup:\n" +
-    "1. The following NS records will be created in ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name}:\n" +
-    "   ${jsonencode(module.route53_dns.nameservers)}"
-  )
+  value = <<-EOT
+DNS Setup Instructions:
+1. Add these NS records to the root zone (${module.route53_dns.parent_domain}):
+   Domain: ${module.route53_dns.domain_name}
+   Type: NS
+   TTL: 300
+   Values:
+   ${jsonencode(module.route53_dns.nameservers)}
+
+2. Wait for DNS propagation (15-30 minutes)
+3. After propagation, enable create_dns_records in terraform
+EOT
 }
 
 # Container Registry Output
