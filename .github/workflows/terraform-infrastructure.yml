@@ -16,6 +16,16 @@ jobs:
       # Common Terraform variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
       TF_VAR_domain: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
+      # Dummy values for app variables (not used in infrastructure deployment)
+      TF_VAR_docker_image: "dummy"
+      TF_VAR_django_secret: "dummy"
+      TF_VAR_debug: "false"
+      TF_VAR_mycredex_app_url: "https://dummy.com"
+      TF_VAR_client_api_key: "dummy"
+      TF_VAR_whatsapp_api_url: "https://dummy.com"
+      TF_VAR_whatsapp_access_token: "dummy"
+      TF_VAR_whatsapp_phone_number_id: "dummy"
+      TF_VAR_whatsapp_business_id: "dummy"
 
     steps:
       - name: Checkout code
