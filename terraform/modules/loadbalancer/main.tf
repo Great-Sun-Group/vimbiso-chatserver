@@ -4,7 +4,7 @@ resource "aws_s3_bucket" "alb_logs" {
   force_destroy = var.environment != "production"
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-alb-logs-${var.environment}"
+    Name = "vimbiso-pay-alb-logbucket-${var.environment}"
   })
 }
 
