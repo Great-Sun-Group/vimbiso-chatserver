@@ -3,6 +3,11 @@ output "certificate_arn" {
   value       = aws_acm_certificate.app.arn
 }
 
+output "certificate_validation_arn" {
+  description = "The ARN of the validated certificate"
+  value       = var.create_dns_records ? aws_acm_certificate_validation.app[0].certificate_arn : aws_acm_certificate.app.arn
+}
+
 output "domain_name" {
   description = "The domain name for which the certificate was issued"
   value       = var.domain_name

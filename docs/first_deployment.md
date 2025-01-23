@@ -78,6 +78,7 @@ module "route53_dns" {
 ```hcl
 module "loadbalancer" {
   # ...
+  certificate_arn = module.route53_cert.certificate_validation_arn  # Use validated certificate
   enable_https = true  # Enable HTTPS now that certificate is valid
 }
 ```
