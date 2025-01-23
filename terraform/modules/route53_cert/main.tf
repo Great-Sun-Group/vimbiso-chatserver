@@ -13,12 +13,21 @@ locals {
   debug = {
     domain_name = var.domain_name
     zone_id = var.create_dns_records ? data.aws_route53_zone.zone[0].zone_id : null
-    validation_options = aws_acm_certificate.app.domain_validation_options
+    validation_options = var.create_dns_records ? try(data.aws_acm_certificate.app[0].domain_validation_options, []) : []
   }
 }
 
+# Look up existing certificate for HTTPS enablement
+data "aws_acm_certificate" "app" {
+  count       = var.create_dns_records ? 1 : 0
+  domain      = var.domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
 # Create ACM certificate with improved configuration
-resource "aws_acm_certificate" "app" {
+# Commented out after initial deployment when enabling HTTPS
+/*resource "aws_acm_certificate" "app" {
   domain_name               = var.domain_name
   validation_method         = "DNS"
   subject_alternative_names = []  # Explicitly empty to avoid validation complexity
@@ -62,15 +71,4 @@ resource "aws_acm_certificate_validation" "app" {
   }
 
   depends_on = [aws_route53_record.cert_validation]
-}
-
-# Output debug information
-output "certificate_validation_info" {
-  value = {
-    certificate_arn = aws_acm_certificate.app.arn
-    domain_name    = var.domain_name
-    zone_info      = local.debug
-    validation_fqdn = var.create_dns_records ? aws_route53_record.cert_validation[0].fqdn : null
-  }
-  description = "Debug information for certificate validation"
-}
+}*/

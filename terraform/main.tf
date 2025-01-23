@@ -20,7 +20,7 @@ module "loadbalancer" {
   vpc_id                = module.networking.vpc_id
   public_subnet_ids     = module.networking.public_subnet_ids
   alb_security_group_id = module.networking.alb_security_group_id
-  certificate_arn       = module.route53_cert.certificate_validation_arn
+  certificate_arn       = module.route53_cert.certificate_arn
   enable_https          = true  # Enabled now that cert is created
   health_check_path     = "/health/"
   health_check_port     = 8000
