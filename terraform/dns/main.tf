@@ -53,8 +53,9 @@ resource "aws_route53_record" "app" {
   }
 }
 
-# Create HTTP listener (initially)
+# Create HTTP listener (only when HTTPS is not enabled)
 resource "aws_lb_listener" "http" {
+  count             = var.enable_https ? 0 : 1
   load_balancer_arn = var.alb_arn
   port              = "80"
   protocol          = "HTTP"
