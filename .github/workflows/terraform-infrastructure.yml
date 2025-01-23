@@ -62,23 +62,6 @@ jobs:
             -backend-config="region=af-south-1" \
             -backend-config="dynamodb_table=${TABLE_NAME}"
 
-      - name: Clear Stale Locks
-        env:
-          DYNAMODB_TABLE: ${{ steps.init-backend.outputs.dynamodb_table }}
-        run: |
-          cd terraform
-          LOCKS_JSON=$(aws dynamodb scan --table-name "$DYNAMODB_TABLE" --output json)
-          if [ ! -z "$LOCKS_JSON" ] && [ "$LOCKS_JSON" != "null" ]; then
-            echo "$LOCKS_JSON" | jq -r '.Items[] | select(.LockID != null) | .LockID.S' | while read -r LOCK_ID; do
-              if [ ! -z "$LOCK_ID" ]; then
-                aws dynamodb delete-item \
-                  --table-name "$DYNAMODB_TABLE" \
-                  --key "{\"LockID\": {\"S\": \"$LOCK_ID\"}}" \
-                  --return-values ALL_OLD
-              fi
-            done
-          fi
-
       - name: Plan Infrastructure Changes
         id: plan
         run: |
