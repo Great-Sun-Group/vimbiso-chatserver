@@ -15,7 +15,7 @@ output "nameservers" {
 
 output "certificate_arn" {
   description = "The ARN of the validated ACM certificate"
-  value       = aws_acm_certificate_validation.main.certificate_arn
+  value       = var.enable_https ? aws_acm_certificate_validation.main[0].certificate_arn : null
 }
 
 output "domain_name" {
@@ -25,5 +25,5 @@ output "domain_name" {
 
 output "https_listener_arn" {
   description = "The ARN of the HTTPS listener"
-  value       = aws_lb_listener.https.arn
+  value       = var.enable_https ? aws_lb_listener.https[0].arn : null
 }
