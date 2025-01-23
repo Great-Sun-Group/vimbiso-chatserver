@@ -4,7 +4,7 @@ resource "aws_cloudwatch_log_group" "app" {
   retention_in_days = var.log_retention_days
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-logs-${var.environment}"
+    Name = "vimbiso-pay-logbucket-${var.environment}"
   })
 }
 
