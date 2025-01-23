@@ -1,0 +1,211 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - prod
+      - dev
+      - "*deploy*"
+    paths-ignore:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-app:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/dev' || contains(github.ref, 'deploy')
+    environment: ${{ (github.ref == 'refs/heads/prod' && 'production') || 'development' }}
+    timeout-minutes: 30
+
+    env:
+      ENVIRONMENT: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+      BUILD_TARGET: production
+      DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
+      # Application variables
+      TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+      TF_VAR_django_secret: ${{ secrets.DJANGO_SECRET }}
+      TF_VAR_mycredex_app_url: ${{ secrets.MYCREDEX_APP_URL }}
+      TF_VAR_client_api_key: ${{ secrets.CLIENT_API_KEY }}
+      TF_VAR_whatsapp_api_url: ${{ secrets.WHATSAPP_API_URL }}
+      TF_VAR_whatsapp_access_token: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+      TF_VAR_whatsapp_phone_number_id: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+      TF_VAR_whatsapp_business_id: ${{ secrets.WHATSAPP_BUSINESS_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: af-south-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: vimbiso-pay-${{ env.ENVIRONMENT }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --no-cache --target $BUILD_TARGET \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Initialize Terraform Backend
+        run: |
+          cd terraform
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          BUCKET_NAME="vimbiso-pay-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          TABLE_NAME="vimbiso-pay-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+
+          terraform init \
+            -backend-config="bucket=${BUCKET_NAME}" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=af-south-1" \
+            -backend-config="dynamodb_table=${TABLE_NAME}"
+
+      - name: Update ECS Service
+        env:
+          TF_VAR_docker_image: ${{ env.IMAGE }}
+        run: |
+          cd terraform
+          terraform plan -input=false -lock-timeout=20m -target=module.ecs -out=plan.tfplan
+          terraform apply -input=false -lock-timeout=20m plan.tfplan
+
+      - name: Wait for Deployment
+        run: |
+          echo "Waiting for deployment to complete..."
+          MAX_ATTEMPTS=12  # 12 minutes total with 60s interval
+          ATTEMPTS=0
+          DEPLOYMENT_DONE=false
+          GRACE_PERIOD=180  # 3 minutes for container health
+          DEPLOY_START_TIME=$(date +%s)
+
+          function get_container_logs() {
+            local TASK_ID=$1
+            local CONTAINER_NAME=$2
+            local START_TIME=$3
+
+            echo "===================="
+            echo "${CONTAINER_NAME} Container Logs (Task ID: ${TASK_ID}):"
+            echo "Start Time: $(date -d @${START_TIME})"
+            echo "===================="
+
+            aws logs get-log-events \
+              --log-group-name "/ecs/vimbiso-pay-$ENVIRONMENT" \
+              --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
+              --start-time ${START_TIME}000 \
+              --limit 200 \
+              --query 'events[].message' \
+              --output text || true
+          }
+
+          while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - DEPLOY_START_TIME))
+
+            SERVICE_JSON=$(aws ecs describe-services \
+              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+              --service "vimbiso-pay-service-$ENVIRONMENT" \
+              --query 'services[0]')
+
+            PRIMARY_DEPLOYMENT=$(echo $SERVICE_JSON | jq -r '.deployments[] | select(.status == "PRIMARY")')
+            RUNNING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.runningCount')
+            DESIRED_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.desiredCount')
+            FAILED_TASKS=$(echo $PRIMARY_DEPLOYMENT | jq -r '.failedTasks')
+            PENDING_COUNT=$(echo $PRIMARY_DEPLOYMENT | jq -r '.pendingCount')
+
+            echo "Deployment Status (Elapsed: ${ELAPSED_TIME}s):"
+            echo "  Running Count: $RUNNING_COUNT"
+            echo "  Desired Count: $DESIRED_COUNT"
+            echo "  Failed Tasks: $FAILED_TASKS"
+            echo "  Pending Count: $PENDING_COUNT"
+
+            # Get running tasks
+            RUNNING_TASKS=$(aws ecs list-tasks \
+              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+              --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+              --desired-status RUNNING \
+              --query 'taskArns[]' \
+              --output text)
+
+            if [ ! -z "$RUNNING_TASKS" ]; then
+              echo "Checking health of running tasks..."
+              aws ecs describe-tasks \
+                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+                --tasks $RUNNING_TASKS \
+                --query 'tasks[].containers[].{name: name, health: healthStatus}' \
+                --output table
+            fi
+
+            # Check for failures
+            if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+              echo "Failed tasks detected after grace period. Fetching logs..."
+              FAILED_TASKS=$(aws ecs list-tasks \
+                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+                --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+                --desired-status STOPPED \
+                --query 'taskArns[]' \
+                --output text)
+
+              if [ ! -z "$FAILED_TASKS" ]; then
+                echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
+                  TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
+                  START_TIME=$(($(date +%s) - 300))
+                  get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+                  get_container_logs "$TASK_ID" "vimbiso-pay-${ENVIRONMENT}" "$START_TIME"
+                done
+              fi
+              exit 1
+            fi
+
+            # Check for success
+            if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ]; then
+              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+                echo "Deployment completed successfully"
+                DEPLOYMENT_DONE=true
+                break
+              fi
+            fi
+
+            ATTEMPTS=$((ATTEMPTS + 1))
+            if [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; then
+              echo "Waiting 60 seconds... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
+              sleep 60
+            fi
+          done
+
+          if [ "$DEPLOYMENT_DONE" != "true" ]; then
+            echo "Deployment timeout after $(($MAX_ATTEMPTS * 60)) seconds"
+            exit 1
+          fi
+
+      - name: Print Deployment Information
+        run: |
+          cd terraform
+          echo "Application Deployment Complete!"
+          echo "============================="
+          echo "Environment: $ENVIRONMENT"
+          echo "Domain: $(terraform output -raw domain_name)"
+          echo "Image: $IMAGE"
+          echo ""
+          echo "Access Points:"
+          echo "-------------"
+          echo "ALB: $(terraform output -raw alb_dns_name)"
+          echo "URL: https://$(terraform output -raw domain_name)"
+          echo ""
+          echo "Health Check:"
+          echo "------------"
+          echo "Endpoint: https://$(terraform output -raw domain_name)/health/"
