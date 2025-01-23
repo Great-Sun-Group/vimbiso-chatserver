@@ -12,17 +12,7 @@ module "networking" {
   tags = local.common_tags
 }
 
-# Route53 Certificate Module
-module "route53_cert" {
-  source = "./modules/route53_cert"
-
-  environment        = var.environment
-  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
-  create_dns_records = false  # Set to false initially since root zone is not yet available
-  tags              = local.common_tags
-}
-
-# Load Balancer Module
+# Load Balancer Module (without certificate initially)
 module "loadbalancer" {
   source = "./modules/loadbalancer"
 
@@ -30,13 +20,26 @@ module "loadbalancer" {
   vpc_id                = module.networking.vpc_id
   public_subnet_ids     = module.networking.public_subnet_ids
   alb_security_group_id = module.networking.alb_security_group_id
-  certificate_arn       = module.route53_cert.certificate_arn
+  certificate_arn       = null
+  enable_https         = false  # Will be enabled after cert is created
   health_check_path     = "/health/"
   health_check_port     = 8000
   deregistration_delay  = 60
   tags                  = local.common_tags
 
-  depends_on = [module.networking, module.route53_cert]
+  depends_on = [module.networking]
+}
+
+# Route53 Certificate Module (after DNS zone is created)
+module "route53_cert" {
+  source = "./modules/route53_cert"
+
+  environment        = var.environment
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
+  create_dns_records = true
+  tags              = local.common_tags
+
+  depends_on = [module.route53_dns]
 }
 
 # EFS Module
@@ -148,8 +151,9 @@ module "route53_dns" {
   source = "./modules/route53_dns"
 
   environment        = var.environment
-  domain_name       = "${local.current_env.subdomain}.${local.current_env.domain_base}"
-  create_dns_records = false  # Set to false initially since root zone is not yet available
+  domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
+  parent_domain     = local.current_env.base_domain
+  create_dns_records = false  # Start false until new NS records are added to root zone
   alb_dns_name      = module.loadbalancer.alb_dns_name
   alb_zone_id       = module.loadbalancer.alb_zone_id
   health_check_id   = module.health_checks.health_check_id

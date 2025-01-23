@@ -1,7 +1,7 @@
-# Optional data source to fetch existing root zone
-data "aws_route53_zone" "root" {
-  count        = var.create_dns_records ? 1 : 0
-  name         = regex("(?:[^.]+\\.)*([^.]+\\.[^.]+)$", var.domain_name)[0]
+# Data source to fetch the hosted zone created by route53_dns module
+data "aws_route53_zone" "zone" {
+  count = var.create_dns_records ? 1 : 0
+  name  = var.domain_name
   private_zone = false
 }
 
@@ -9,10 +9,11 @@ locals {
   # Add validation for domain name format
   domain_validation = regex("^[a-zA-Z0-9][a-zA-Z0-9-]*(\\.[a-zA-Z0-9][a-zA-Z0-9-]*)*$", var.domain_name)
 
-  # Add debug outputs
+  # Add debug outputs for certificate validation
   debug = {
-    zone_name = var.create_dns_records ? data.aws_route53_zone.root[0].name : null
-    zone_id   = var.create_dns_records ? data.aws_route53_zone.root[0].zone_id : null
+    domain_name = var.domain_name
+    zone_id = var.create_dns_records ? data.aws_route53_zone.zone[0].zone_id : null
+    validation_options = aws_acm_certificate.app.domain_validation_options
   }
 }
 
@@ -40,7 +41,7 @@ resource "aws_route53_record" "cert_validation" {
   name            = tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_name
   records         = [tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_value]
   type            = tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_type
-  zone_id         = data.aws_route53_zone.root[0].zone_id
+  zone_id         = data.aws_route53_zone.zone[0].zone_id
   ttl             = 600  # Further increased TTL for validation records
 
   depends_on = [aws_acm_certificate.app]

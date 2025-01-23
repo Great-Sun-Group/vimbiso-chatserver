@@ -1,7 +1,7 @@
 {
   "environment": "development",
-  "subdomain": "dev.vimbiso-chatserver",
-  "domain_base": "vimbisopay.africa",
+  "base_domain": "vimbisopay.africa",
+  "subdomain": "dev-vimbiso-chatserver",
   "aws_region": "af-south-1",
   "vpc_cidr": "10.1.0.0/16",
   "ecs_task": {

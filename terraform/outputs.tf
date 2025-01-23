@@ -21,19 +21,37 @@ output "alb_dns_name" {
 }
 
 # DNS Outputs
-output "route53_nameservers" {
-  description = "Nameservers for the Route53 zone. Provide these to the root domain administrator."
-  value       = module.route53_dns.nameservers
+output "dns_info" {
+  description = "DNS configuration information"
+  value = {
+    domain = {
+      name = module.route53_dns.domain_name
+      parent = module.route53_dns.parent_domain
+      zone_id = module.route53_dns.zone_id
+      nameservers = module.route53_dns.nameservers
+    }
+    zone_details = module.route53_dns.zone_info
+    certificate = {
+      arn = module.route53_cert.certificate_arn
+      validation = module.route53_cert.validation_info
+    }
+  }
 }
 
-output "domain_name" {
-  description = "The domain name for the environment"
-  value       = module.route53_dns.domain_name
-}
+output "dns_instructions" {
+  description = "Instructions for DNS configuration"
+  value = <<-EOT
+DNS Setup Instructions:
+1. Add these NS records to the root zone (${module.route53_dns.parent_domain}):
+   Domain: ${module.route53_dns.domain_name}
+   Type: NS
+   TTL: 300
+   Values:
+   ${jsonencode(module.route53_dns.nameservers)}
 
-output "zone_id" {
-  description = "Route53 zone ID"
-  value       = module.route53_dns.zone_id
+2. Wait for DNS propagation (15-30 minutes)
+3. After propagation, enable create_dns_records in terraform
+EOT
 }
 
 # Container Registry Output
