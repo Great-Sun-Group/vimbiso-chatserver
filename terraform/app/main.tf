@@ -6,8 +6,6 @@ resource "aws_ecs_cluster" "main" {
     name  = "containerInsights"
     value = "enabled"
   }
-
-  tags = var.tags
 }
 
 # ECS Task Definition
@@ -109,8 +107,6 @@ resource "aws_ecs_task_definition" "app" {
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/vimbiso-pay-${var.environment}"
   retention_in_days = 30
-
-  tags = var.tags
 }
 
 # ECS Service

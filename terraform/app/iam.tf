@@ -14,8 +14,6 @@ resource "aws_iam_role" "ecs_execution" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution" {
@@ -39,8 +37,6 @@ resource "aws_iam_role" "ecs_task" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 # Allow ECS tasks to write logs
