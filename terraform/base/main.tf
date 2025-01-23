@@ -224,12 +224,6 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# Create ECS Service Linked Role
-resource "aws_iam_service_linked_role" "ecs" {
-  aws_service_name = "ecs.amazonaws.com"
-  description      = "Service linked role for ECS"
-}
-
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "vimbiso-pay-cluster-${var.environment}"
@@ -242,17 +236,4 @@ resource "aws_ecs_cluster" "main" {
   tags = merge(var.tags, {
     Name = "vimbiso-pay-cluster-${var.environment}"
   })
-}
-
-# ECS Capacity Providers
-resource "aws_ecs_cluster_capacity_providers" "main" {
-  depends_on = [aws_iam_service_linked_role.ecs]
-  cluster_name = aws_ecs_cluster.main.name
-  capacity_providers = ["FARGATE"]
-
-  default_capacity_provider_strategy {
-    base              = 1
-    weight            = 100
-    capacity_provider = "FARGATE"
-  }
 }
