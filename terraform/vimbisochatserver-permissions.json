@@ -124,7 +124,9 @@
                 "route53:ListHostedZones",
                 "route53:ChangeResourceRecordSets",
                 "route53:ListResourceRecordSets",
-                "route53:GetChange"
+                "route53:GetChange",
+                "route53:ChangeTagsForResource",
+                "route53:ListTagsForResource"
             ],
             "Resource": "*"
         },
@@ -168,7 +170,8 @@
                 "iam:TagRole",
                 "iam:PassRole",
                 "iam:CreateServiceLinkedRole",
-                "iam:GetServiceLinkedRoleDeletionStatus"
+                "iam:GetServiceLinkedRoleDeletionStatus",
+                "iam:DeleteServiceLinkedRole"
             ],
             "Resource": [
                 "arn:aws:iam::*:role/vimbiso-pay-*",
