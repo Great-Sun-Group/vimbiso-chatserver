@@ -1,5 +1,5 @@
 variable "environment" {
-  description = "The deployment environment (development, production)"
+  description = "Environment name"
   type        = string
 }
 
@@ -8,14 +8,20 @@ variable "domain_name" {
   type        = string
 }
 
-variable "tags" {
-  description = "Common resource tags"
-  type        = map(string)
-  default     = {}
+variable "create_dns_records" {
+  description = "Whether to create DNS records"
+  type        = bool
+  default     = false
 }
 
-variable "create_dns_records" {
-  description = "Whether to create DNS records for certificate validation. Set to false for initial deployment before NS records are configured, then set to true after NS records are in place."
+variable "use_existing_cert" {
+  description = "Whether to use an existing certificate instead of creating a new one"
   type        = bool
-  default     = false  # Default to false for safety
+  default     = false
+}
+
+variable "tags" {
+  description = "Tags to apply to resources"
+  type        = map(string)
+  default     = {}
 }

@@ -37,6 +37,7 @@ module "route53_cert" {
   environment        = var.environment
   domain_name       = "${local.current_env.subdomain}.${local.current_env.base_domain}"
   create_dns_records = true  # Enable DNS validation now that NS records are configured
+  use_existing_cert  = true  # Use existing certificate instead of creating new one
   tags              = local.common_tags
 
   depends_on = []

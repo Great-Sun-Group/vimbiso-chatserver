@@ -74,18 +74,23 @@ module "route53_dns" {
 
 ### Stage 4: Enable HTTPS
 
-1. After certificate is validated:
-   - Comment out the certificate creation and validation resources in `terraform/modules/route53_cert/main.tf`
-   - The data source will automatically look up the existing validated certificate
-
-2. Update `terraform/main.tf`:
+1. After certificate is validated, update `terraform/main.tf`:
 ```hcl
+module "route53_cert" {
+  # ...
+  use_existing_cert = true  # Switch to using existing certificate instead of creating new one
+}
+
 module "loadbalancer" {
   # ...
-  certificate_arn = module.route53_cert.certificate_arn  # Use existing certificate
   enable_https = true  # Enable HTTPS now that certificate is valid
 }
 ```
+
+The module will automatically:
+- Stop managing the existing certificate
+- Look up and use the validated certificate
+- Enable HTTPS on the load balancer
 
 2. Run deployment to enable HTTPS
    - ALB will now use HTTPS with the validated certificate

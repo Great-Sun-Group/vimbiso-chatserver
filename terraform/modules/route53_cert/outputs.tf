@@ -1,6 +1,6 @@
 output "certificate_arn" {
   description = "The ARN of the certificate"
-  value       = try(data.aws_acm_certificate.app[0].arn, null)
+  value       = var.use_existing_cert ? try(data.aws_acm_certificate.existing[0].arn, null) : try(aws_acm_certificate.app[0].arn, null)
 }
 
 output "domain_name" {

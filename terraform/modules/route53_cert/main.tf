@@ -13,21 +13,21 @@ locals {
   debug = {
     domain_name = var.domain_name
     zone_id = var.create_dns_records ? data.aws_route53_zone.zone[0].zone_id : null
-    status = var.create_dns_records ? data.aws_acm_certificate.app[0].status : "not_found"
+    status = var.use_existing_cert ? try(data.aws_acm_certificate.existing[0].status, "not_found") : "creating"
   }
 }
 
 # Look up existing certificate for HTTPS enablement
-data "aws_acm_certificate" "app" {
-  count       = var.create_dns_records ? 1 : 0
+data "aws_acm_certificate" "existing" {
+  count       = var.use_existing_cert ? 1 : 0
   domain      = var.domain_name
   statuses    = ["ISSUED"]
   most_recent = true
 }
 
 # Create ACM certificate with improved configuration
-# Commented out after initial deployment when enabling HTTPS
-/*resource "aws_acm_certificate" "app" {
+resource "aws_acm_certificate" "app" {
+  count                  = var.use_existing_cert ? 0 : 1
   domain_name               = var.domain_name
   validation_method         = "DNS"
   subject_alternative_names = []  # Explicitly empty to avoid validation complexity
@@ -45,11 +45,11 @@ data "aws_acm_certificate" "app" {
 
 # Create DNS validation record with improved configuration
 resource "aws_route53_record" "cert_validation" {
-  count           = var.create_dns_records ? 1 : 0
+  count           = (var.create_dns_records && !var.use_existing_cert) ? 1 : 0
   allow_overwrite = true
-  name            = tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_name
-  records         = [tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_value]
-  type            = tolist(aws_acm_certificate.app.domain_validation_options)[0].resource_record_type
+  name            = tolist(aws_acm_certificate.app[0].domain_validation_options)[0].resource_record_name
+  records         = [tolist(aws_acm_certificate.app[0].domain_validation_options)[0].resource_record_value]
+  type            = tolist(aws_acm_certificate.app[0].domain_validation_options)[0].resource_record_type
   zone_id         = data.aws_route53_zone.zone[0].zone_id
   ttl             = 600  # Further increased TTL for validation records
 
@@ -58,8 +58,8 @@ resource "aws_route53_record" "cert_validation" {
 
 # Validate the certificate with improved configuration
 resource "aws_acm_certificate_validation" "app" {
-  count                   = var.create_dns_records ? 1 : 0
-  certificate_arn         = aws_acm_certificate.app.arn
+  count                   = (var.create_dns_records && !var.use_existing_cert) ? 1 : 0
+  certificate_arn         = aws_acm_certificate.app[0].arn
   validation_record_fqdns = [aws_route53_record.cert_validation[0].fqdn]
 
   timeouts {
@@ -71,4 +71,4 @@ resource "aws_acm_certificate_validation" "app" {
   }
 
   depends_on = [aws_route53_record.cert_validation]
-}*/
+}
