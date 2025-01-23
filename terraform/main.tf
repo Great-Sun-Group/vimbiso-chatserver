@@ -87,59 +87,5 @@ module "app" {
   depends_on = [module.base, module.dns]
 }
 
-# Variables
-variable "environment" {
-  description = "Environment name (production or development)"
-  type        = string
-  validation {
-    condition     = contains(["production", "development"], var.environment)
-    error_message = "Environment must be either 'production' or 'development'."
-  }
-}
-
-variable "docker_image" {
-  description = "Docker image to deploy"
-  type        = string
-}
-
-variable "django_secret" {
-  description = "Django secret key"
-  type        = string
-  sensitive   = true
-}
-
-variable "mycredex_app_url" {
-  description = "MyCredex app URL"
-  type        = string
-}
-
-variable "client_api_key" {
-  description = "Client API key"
-  type        = string
-  sensitive   = true
-}
-
-variable "whatsapp_api_url" {
-  description = "WhatsApp API URL"
-  type        = string
-}
-
-variable "whatsapp_access_token" {
-  description = "WhatsApp access token"
-  type        = string
-  sensitive   = true
-}
-
-variable "whatsapp_phone_number_id" {
-  description = "WhatsApp phone number ID"
-  type        = string
-}
-
-variable "whatsapp_business_id" {
-  description = "WhatsApp business ID"
-  type        = string
-}
-
 # Data sources
-data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
