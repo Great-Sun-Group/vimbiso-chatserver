@@ -21,19 +21,41 @@ output "alb_dns_name" {
 }
 
 # DNS Outputs
-output "route53_nameservers" {
-  description = "Nameservers for the Route53 zone. Provide these to the root domain administrator."
-  value       = module.route53_dns.nameservers
+output "dns_info" {
+  description = "DNS configuration information"
+  value = {
+    domain = {
+      name = module.route53_dns.domain_name
+      parent = module.route53_dns.parent_domain
+      zone_id = module.route53_dns.zone_id
+      nameservers = module.route53_dns.nameservers
+    }
+    zone_details = module.route53_dns.zone_info
+    certificate = {
+      arn = module.route53_cert.certificate_arn
+      validation = module.route53_cert.validation_info
+    }
+  }
 }
 
-output "domain_name" {
-  description = "The domain name for the environment"
-  value       = module.route53_dns.domain_name
-}
-
-output "zone_id" {
-  description = "Route53 zone ID"
-  value       = module.route53_dns.zone_id
+output "dns_instructions" {
+  description = "Instructions for DNS configuration"
+  value = local.current_env.env_prefix != "" ? (
+    "Development Environment DNS Setup:\n" +
+    "1. Ensure NS records for ${module.route53_dns.parent_domain} exist in ${local.current_env.base_domain}\n" +
+    "2. The following NS records will be created in ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name}:\n" +
+    "   ${jsonencode(module.route53_dns.nameservers)}\n\n" +
+    "Important Note About DNS Delegation:\n" +
+    "- If NS records were manually added to ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name},\n" +
+    "  they will be visible in DNS queries (dig) but not through the Route53 API\n" +
+    "- The terraform code needs the hosted zone to exist in Route53 as a proper resource\n" +
+    "- Ensure the zone is created through Route53 (not just NS records added manually)\n" +
+    "- You can verify this by checking the zone exists in the Route53 console"
+  ) : (
+    "Production Environment DNS Setup:\n" +
+    "1. The following NS records will be created in ${module.route53_dns.parent_domain} for ${module.route53_dns.domain_name}:\n" +
+    "   ${jsonencode(module.route53_dns.nameservers)}"
+  )
 }
 
 # Container Registry Output

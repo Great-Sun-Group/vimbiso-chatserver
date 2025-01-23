@@ -1,5 +1,10 @@
 variable "domain_name" {
-  description = "The domain name for the DNS records"
+  description = "The domain name for the environment"
+  type        = string
+}
+
+variable "parent_domain" {
+  description = "The parent domain where NS records will be created"
   type        = string
 }
 

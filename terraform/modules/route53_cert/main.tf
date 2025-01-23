@@ -1,7 +1,7 @@
 # Optional data source to fetch existing root zone
 data "aws_route53_zone" "root" {
   count        = var.create_dns_records ? 1 : 0
-  name         = regex("(?:[^.]+\\.)*([^.]+\\.[^.]+)$", var.domain_name)[0]
+  name         = var.domain_name
   private_zone = false
 }
 
