@@ -30,6 +30,11 @@ variable "max_capacity" {
 }
 
 # Network Configuration
+variable "vpc_id" {
+  description = "ID of the VPC where resources will be created"
+  type        = string
+}
+
 variable "private_subnet_ids" {
   description = "List of private subnet IDs for ECS tasks"
   type        = list(string)

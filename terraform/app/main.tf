@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping && nc -zv localhost 6379 && nc -zv 0.0.0.0 6379"]
+        command     = ["CMD-SHELL", "if ! getent hosts redis-state || ! nc -z localhost 6379; then echo 'DNS/connectivity check failed' && exit 1; fi && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping"]
         interval    = 10
         timeout     = 5
         retries     = 3
@@ -95,11 +95,11 @@ resource "aws_ecs_task_definition" "app" {
       ]
       # Remove dependsOn to allow independent startup
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
+        command     = ["CMD-SHELL", "if ! getent hosts redis-state || ! nc -z redis-state 6379; then echo 'Redis DNS/connectivity check failed' && exit 1; fi && curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
         interval    = 30
         timeout     = 10
         retries     = 5
-        startPeriod = 30           # Reduced since we're not waiting for Redis
+        startPeriod = 30
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -113,6 +113,33 @@ resource "aws_ecs_task_definition" "app" {
     }
   ])
 
+}
+
+# Service Discovery Private DNS Namespace
+resource "aws_service_discovery_private_dns_namespace" "app" {
+  name        = "vimbiso-${var.environment}.local"
+  description = "Private DNS namespace for vimbiso services"
+  vpc         = var.vpc_id
+}
+
+# Service Discovery Service for Redis
+resource "aws_service_discovery_service" "redis" {
+  name = "redis-state"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.app.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
 }
 
 # CloudWatch Log Group
@@ -138,6 +165,10 @@ resource "aws_ecs_service" "app" {
     subnets          = var.private_subnet_ids
     security_groups  = [var.ecs_security_group_id]
     assign_public_ip = false  # Use NAT Gateway for internet access
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.redis.arn
   }
 
   load_balancer {
