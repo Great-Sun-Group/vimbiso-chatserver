@@ -77,9 +77,25 @@ jobs:
         env:
           TF_VAR_docker_image: ${{ env.IMAGE }}
         run: |
+          # Ensure log group exists before deployment
+          aws logs create-log-group --log-group-name "/ecs/vimbiso-$ENVIRONMENT" || true
+          aws logs put-retention-policy --log-group-name "/ecs/vimbiso-$ENVIRONMENT" --retention-in-days 30
+
           cd terraform
           terraform plan -input=false -lock-timeout=20m -target=module.ecs -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
+
+          # Wait a moment for changes to propagate
+          sleep 10
+
+          # List existing tasks to clean state
+          echo "Current tasks before new deployment:"
+          aws ecs list-tasks \
+            --cluster "vimbiso-cluster-$ENVIRONMENT" \
+            --service-name "vimbiso-service-$ENVIRONMENT" \
+            --desired-status STOPPED \
+            --query 'taskArns[]' \
+            --output table || true
 
       - name: Wait for Deployment
         run: |

@@ -73,14 +73,8 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       command = [
-        "redis-server",
-        "--protected-mode", "no",
-        "--bind", "0.0.0.0",
-        "--maxmemory", "256mb",
-        "--maxmemory-policy", "allkeys-lru",
-        "--save", "",
-        "--appendonly", "no",
-        "--maxclients", "10000"
+        "sh", "-c",
+        "redis-server --protected-mode no --bind 0.0.0.0 --maxmemory 256mb --maxmemory-policy allkeys-lru --save \"\" --appendonly no --maxclients 10000 --loglevel debug --logfile /dev/stdout"
       ]
       ulimits = [
         {
@@ -102,6 +96,8 @@ resource "aws_ecs_task_definition" "app" {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "redis"
+          "mode"                  = "non-blocking"
+          "max-buffer-size"       = "1m"
         }
       }
     },
@@ -120,7 +116,9 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://redis-state:6379/0" }
+        { name = "REDIS_URL", value = "redis://redis-state:6379/0" },
+        { name = "LOG_LEVEL", value = "debug" },
+        { name = "PYTHONUNBUFFERED", value = "1" }
       ]
       portMappings = [
         {
@@ -142,6 +140,8 @@ resource "aws_ecs_task_definition" "app" {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "app"
+          "mode"                  = "non-blocking"
+          "max-buffer-size"       = "1m"
         }
       }
       dependsOn = [
