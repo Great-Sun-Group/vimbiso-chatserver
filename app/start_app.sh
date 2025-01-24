@@ -22,7 +22,7 @@ else
     echo "Could not resolve Redis IP, using original host: $REDIS_HOST"
 fi
 
-# Test Redis connectivity in background
+# Test Redis connectivity in background with enhanced logging
 (
     echo "Starting Redis connection attempts in background..."
     max_attempts=30  # 30 attempts * 10s = 5 minutes total
@@ -35,36 +35,46 @@ fi
             break
         fi
 
-        echo "Attempting Redis connection to $REDIS_HOST (attempt $attempt/$max_attempts)..."
-    echo "Testing DNS resolution..."
-    echo "Network interfaces:"
-    ip addr show || true
+        echo "=== Redis Connection Attempt $attempt/$max_attempts ==="
+        echo "Current time: $(date -u)"
+        echo "REDIS_URL: ${REDIS_URL}"
+        echo "REDIS_HOST: ${REDIS_HOST}"
 
-    echo "Network routes:"
-    ip route || true
+        echo "=== DNS Resolution ==="
+        echo "DNS configuration:"
+        cat /etc/resolv.conf
 
-    echo "DNS configuration:"
-    cat /etc/resolv.conf || true
+        echo "DNS lookup for redis-state:"
+        getent hosts redis-state || echo "Failed to resolve redis-state"
 
-    echo "Attempting DNS lookup for $REDIS_HOST..."
-    getent hosts "$REDIS_HOST" || true
+        echo "=== Network Configuration ==="
+        echo "Network interfaces:"
+        ip addr show
 
-    echo "Testing all local DNS servers..."
-    for ns in $(grep nameserver /etc/resolv.conf | awk '{print $2}'); do
-        echo "Testing nameserver $ns..."
-        nslookup "$REDIS_HOST" "$ns" || true
-    done
+        echo "Network routes:"
+        ip route
 
-    echo "Testing Redis connection..."
-        if timeout 10 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
-            echo "Redis connection successful!"
+        echo "=== Container Discovery ==="
+        echo "Docker DNS check:"
+        dig redis-state || echo "dig command failed"
+
+        echo "=== Redis Connection Test ==="
+        if timeout 10 redis-cli -h "$REDIS_HOST" ping; then
+            echo "Redis connection SUCCESSFUL!"
+            # Export success for health check
+            echo "REDIS_HEALTHY=true" > /tmp/redis_health
             break
         else
-            echo "Redis connection failed (attempt $attempt). Error code: $?"
-            echo "Network connectivity test:"
-            nc -zv "$REDIS_HOST" 6379 || echo "Cannot establish TCP connection to $REDIS_HOST:6379"
+            echo "Redis connection FAILED (attempt $attempt)"
+            echo "Detailed connection test:"
+            nc -zv "$REDIS_HOST" 6379 || echo "TCP connection to $REDIS_HOST:6379 failed"
+            redis-cli -h "$REDIS_HOST" ping -v || echo "Redis ping failed with verbose output"
+            # Mark Redis as unhealthy
+            echo "REDIS_HEALTHY=false" > /tmp/redis_health
         fi
 
+        echo "=== End of Attempt $attempt ==="
+        echo "Waiting $wait_time seconds before next attempt..."
         sleep $wait_time
         attempt=$((attempt + 1))
     done

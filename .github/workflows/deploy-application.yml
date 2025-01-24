@@ -228,11 +228,21 @@ jobs:
               # If app is running, check component health from health endpoint
               if [ "$APP_HEALTH" != "UNKNOWN" ]; then
                 echo "Checking component health status..."
-                ALB_DNS=$(aws ecs describe-services \
+                TARGET_GROUP_ARN=$(aws ecs describe-services \
                   --cluster "vimbiso-cluster-$ENVIRONMENT" \
                   --services "vimbiso-service-$ENVIRONMENT" \
                   --query 'services[0].loadBalancers[0].targetGroupArn' \
-                  --output text | sed 's/\/.*$//' | xargs aws elbv2 describe-load-balancers --load-balancer-arns | jq -r '.LoadBalancers[0].DNSName')
+                  --output text)
+
+                ALB_ARN=$(aws elbv2 describe-target-groups \
+                  --target-group-arns $TARGET_GROUP_ARN \
+                  --query 'TargetGroups[0].LoadBalancerArns[0]' \
+                  --output text)
+
+                ALB_DNS=$(aws elbv2 describe-load-balancers \
+                  --load-balancer-arns $ALB_ARN \
+                  --query 'LoadBalancers[0].DNSName' \
+                  --output text)
                 HEALTH_CHECK_URL="http://${ALB_DNS}/health/"
                 COMPONENT_HEALTH=$(curl -s $HEALTH_CHECK_URL || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
                 echo "Component Health Status:"

@@ -99,7 +99,7 @@ resource "aws_ecs_task_definition" "app" {
       ]
       # Remove dependsOn to allow independent startup
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"app\":\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"status\":\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
         interval    = 30
         timeout     = 10
         retries     = 5

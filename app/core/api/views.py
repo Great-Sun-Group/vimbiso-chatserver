@@ -34,25 +34,43 @@ class HealthCheck(APIView):
 
     @staticmethod
     def get(request):
+        # Check Redis health status from file
+        redis_healthy = False
+        try:
+            with open('/tmp/redis_health', 'r') as f:
+                redis_healthy = f.read().strip() == "REDIS_HEALTHY=true"
+        except Exception as e:
+            logger.error(f"Failed to read Redis health status: {str(e)}")
+
+        # Verify app can still use Redis
+        redis_status = "unknown"
+        if redis_healthy:
+            try:
+                cache.set('health_check', 'ok')
+                test_value = cache.get('health_check')
+                if test_value == 'ok':
+                    redis_status = "healthy"
+                else:
+                    redis_status = "unhealthy"
+                    logger.error("Redis test value mismatch")
+            except Exception as e:
+                redis_status = "unhealthy"
+                logger.error(f"Redis operation failed: {str(e)}")
+        else:
+            redis_status = "unhealthy"
+            logger.error("Redis marked as unhealthy by startup script")
+
         health_status = {
-            "status": "healthy",
+            "status": "healthy",  # Keep app healthy even if Redis is down
             "components": {
                 "app": "healthy",
-                "redis": "unknown"
+                "redis": redis_status
             }
         }
 
-        # Check Redis connectivity
-        try:
-            cache.set('health_check', 'ok')
-            health_status["components"]["redis"] = "healthy"
-        except Exception as e:
-            logger.error(f"Redis health check failed: {str(e)}")
-            health_status["components"]["redis"] = "unhealthy"
-            # Don't fail the whole check just because Redis is down
+        # Enhanced logging for health status
+        logger.info(f"Health check status: {health_status}")
 
-        # Return 200 if app is running, even if Redis is down
-        # This lets ECS know the app itself is healthy
         return JsonResponse(health_status, status=status.HTTP_200_OK)
 
 
