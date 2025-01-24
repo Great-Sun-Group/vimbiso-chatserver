@@ -14,7 +14,6 @@ resource "aws_ecr_repository" "app" {
   lifecycle {
     prevent_destroy = true
   }
-
 }
 
 # ECR Lifecycle Policy
@@ -63,7 +62,7 @@ resource "aws_ecs_task_definition" "app" {
     {
       name      = "redis-state"
       image     = "redis:7.0-alpine"
-      essential = false
+      essential = true
       memory    = 512
       cpu       = 256
       portMappings = [
@@ -77,14 +76,17 @@ resource "aws_ecs_task_definition" "app" {
         "redis-server",
         "--protected-mode", "no",
         "--bind", "0.0.0.0",
-        "--maxmemory-policy", "allkeys-lru"
+        "--maxmemory", "256mb",
+        "--maxmemory-policy", "allkeys-lru",
+        "--save", "",  # Disable persistence
+        "--appendonly", "no"  # Disable AOF persistence
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "redis-cli ping"]
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 10
+        startPeriod = 60  # Increased to match grace period
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -110,7 +112,7 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://localhost:6379/0" }
+        { name = "REDIS_URL", value = "redis://redis-state:6379/0" }
       ]
       portMappings = [
         {
@@ -124,7 +126,7 @@ resource "aws_ecs_task_definition" "app" {
         interval    = 30
         timeout     = 5
         retries     = 3
-        startPeriod = 30
+        startPeriod = 60  # Increased to match grace period
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -158,7 +160,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 60
+  health_check_grace_period_seconds = 120  # Increased to allow containers to start
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
