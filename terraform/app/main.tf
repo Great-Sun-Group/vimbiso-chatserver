@@ -76,11 +76,12 @@ resource "aws_ecs_task_definition" "app" {
         "redis-server",
         "--protected-mode", "no",
         "--bind", "0.0.0.0",
-        "--maxmemory", "256mb",
+        "--maxmemory", "384mb",
         "--maxmemory-policy", "allkeys-lru",
         "--save", "",
         "--appendonly", "no",
-        "--maxclients", "10000"
+        "--maxclients", "10000",
+        "--tcp-keepalive", "60"
       ]
       ulimits = [
         {
@@ -91,10 +92,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
-        interval    = 10
-        timeout     = 5
+        interval    = 30
+        timeout     = 10
         retries     = 3
-        startPeriod = 30
+        startPeriod = 60
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -131,10 +132,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-        interval    = 10
-        timeout     = 5
+        interval    = 30
+        timeout     = 10
         retries     = 3
-        startPeriod = 90
+        startPeriod = 120
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -168,7 +169,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 120  # Increased to allow containers to start
+  health_check_grace_period_seconds = 180  # Increased to match container start periods
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime

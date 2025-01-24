@@ -43,12 +43,8 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
 # Storage paths
-DEPLOYED_TO_AWS = env('DEPLOYED_TO_AWS', default=False, cast=bool)
-if DEPLOYED_TO_AWS:
-    BASE_PATH = "/efs-vols/app-data/data"
-else:
-    BASE_PATH = BASE_DIR / 'data'
-    os.makedirs(BASE_PATH, exist_ok=True)
+BASE_PATH = BASE_DIR / 'data'
+os.makedirs(BASE_PATH, exist_ok=True)
 
 # Static files configuration
 STATIC_URL = "/static/"
@@ -73,19 +69,19 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
-            "SOCKET_TIMEOUT": 5,  # seconds
+            "SOCKET_CONNECT_TIMEOUT": 30,  # Increased timeout
+            "SOCKET_TIMEOUT": 30,  # Increased timeout
             "RETRY_ON_TIMEOUT": True,
-            "MAX_CONNECTIONS": 10,
-            "HEALTH_CHECK_INTERVAL": 30,  # seconds
+            "MAX_CONNECTIONS": 20,  # Increased connections
             "CONNECTION_POOL_CLASS": "redis.ConnectionPool",
-            # Removed PARSER_CLASS since it's causing issues with newer Redis versions
             "REDIS_CLIENT_KWARGS": {
-                "decode_responses": True  # Match existing client configuration
+                "decode_responses": True,
+                "retry_on_timeout": True,
+                "socket_keepalive": True
             }
         },
-        "KEY_PREFIX": "vimbiso",  # Namespace cache keys
-        "TIMEOUT": None,  # Disable cache timeouts since we're using it for state
+        "KEY_PREFIX": "vimbiso",
+        "TIMEOUT": None,
     }
 }
 

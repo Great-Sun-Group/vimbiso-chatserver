@@ -10,29 +10,39 @@ echo "REDIS_URL from environment: ${REDIS_URL:-not set}"
 REDIS_HOST=$(echo "${REDIS_URL:-redis://localhost:6379/0}" | sed -E 's|redis://([^:/]+).*|\1|')
 echo "Extracted Redis host: $REDIS_HOST"
 
-# Test Redis connectivity with reasonable timeout
+# Test Redis connectivity with increased timeout
 echo "Waiting for Redis to be ready..."
-max_attempts=20  # 20 attempts * 3s = 60s total
+max_attempts=30  # 30 attempts * 5s = 150s total
 attempt=1
-wait_time=3
+wait_time=5
 
 while true; do
     if [ $attempt -gt $max_attempts ]; then
         echo "Redis is still unavailable after $max_attempts attempts - giving up"
-        echo "Last Redis connection attempt output:"
+        echo "Debug information:"
+        echo "1. Redis connection attempt:"
         redis-cli -h "$REDIS_HOST" ping || true
-        echo "Network status:"
+        echo "2. Network status:"
         netstat -an | grep 6379 || true
+        echo "3. DNS resolution:"
+        nslookup "$REDIS_HOST" || true
+        echo "4. Route to Redis:"
+        traceroute "$REDIS_HOST" || true
+        echo "5. Process status:"
+        ps aux | grep redis || true
         exit 1
     fi
 
     echo "Attempting Redis connection (attempt $attempt/$max_attempts waiting ${wait_time}s)..."
 
-    if redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
+    # Try Redis connection with explicit timeout
+    if timeout 5 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
         echo "Redis connection successful!"
+        redis-cli -h "$REDIS_HOST" info || true  # Print Redis info for debugging
         break
     else
-        echo "Redis connection failed. Retrying in ${wait_time}s..."
+        echo "Redis connection failed (attempt $attempt). Error code: $?"
+        echo "Retrying in ${wait_time}s..."
         sleep $wait_time
         attempt=$((attempt + 1))
     fi
