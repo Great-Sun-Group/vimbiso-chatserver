@@ -51,7 +51,7 @@ jobs:
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: vimbiso-pay-${{ env.ENVIRONMENT }}
+          ECR_REPOSITORY: vimbiso-chatserver-${{ env.ENVIRONMENT }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build --no-cache --target $BUILD_TARGET \
@@ -66,8 +66,8 @@ jobs:
         run: |
           cd terraform
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          BUCKET_NAME="vimbiso-pay-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
-          TABLE_NAME="vimbiso-pay-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          BUCKET_NAME="vimbiso-chatserver-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          TABLE_NAME="vimbiso-chatserver-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
 
           terraform init \
             -backend-config="bucket=${BUCKET_NAME}" \
@@ -103,7 +103,7 @@ jobs:
             echo "===================="
 
             aws logs get-log-events \
-              --log-group-name "/ecs/vimbiso-pay-$ENVIRONMENT" \
+              --log-group-name "/ecs/vimbiso-chatserver-$ENVIRONMENT" \
               --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
               --start-time ${START_TIME}000 \
               --limit 200 \
@@ -116,8 +116,8 @@ jobs:
             ELAPSED_TIME=$((CURRENT_TIME - DEPLOY_START_TIME))
 
             SERVICE_JSON=$(aws ecs describe-services \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service "vimbiso-pay-service-$ENVIRONMENT" \
+              --cluster "vimbiso-chatserver-cluster-$ENVIRONMENT" \
+              --service "vimbiso-chatserver-service-$ENVIRONMENT" \
               --query 'services[0]')
 
             PRIMARY_DEPLOYMENT=$(echo $SERVICE_JSON | jq -r '.deployments[] | select(.status == "PRIMARY")')
@@ -134,8 +134,8 @@ jobs:
 
             # Get running tasks
             RUNNING_TASKS=$(aws ecs list-tasks \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+              --cluster "vimbiso-chatserver-cluster-$ENVIRONMENT" \
+              --service-name "vimbiso-chatserver-service-$ENVIRONMENT" \
               --desired-status RUNNING \
               --query 'taskArns[]' \
               --output text)
@@ -143,7 +143,7 @@ jobs:
             if [ ! -z "$RUNNING_TASKS" ]; then
               echo "Checking health of running tasks..."
               aws ecs describe-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+                --cluster "vimbiso-chatserver-cluster-$ENVIRONMENT" \
                 --tasks $RUNNING_TASKS \
                 --query 'tasks[].containers[].{name: name, health: healthStatus}' \
                 --output table
@@ -153,8 +153,8 @@ jobs:
             if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
               echo "Failed tasks detected after grace period. Fetching logs..."
               FAILED_TASKS=$(aws ecs list-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-                --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+              --cluster "vimbiso-chatserver-cluster-$ENVIRONMENT" \
+              --service-name "vimbiso-chatserver-service-$ENVIRONMENT" \
                 --desired-status STOPPED \
                 --query 'taskArns[]' \
                 --output text)
@@ -164,7 +164,7 @@ jobs:
                   TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
                   START_TIME=$(($(date +%s) - 300))
                   get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
-                  get_container_logs "$TASK_ID" "vimbiso-pay-${ENVIRONMENT}" "$START_TIME"
+                  get_container_logs "$TASK_ID" "vimbiso-chatserver-${ENVIRONMENT}" "$START_TIME"
                 done
               fi
               exit 1
