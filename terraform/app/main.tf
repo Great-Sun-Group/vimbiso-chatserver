@@ -120,7 +120,11 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://redis-state:6379/0" }
+        { name = "REDIS_URL", value = "redis://redis-state:6379/0" },
+        { name = "ALLOWED_HOSTS", value = "*" },  # Allow all hosts since behind ALB
+        { name = "DEBUG", value = "false" },
+        { name = "APP_LOG_LEVEL", value = "INFO" },
+        { name = "DJANGO_LOG_LEVEL", value = "INFO" }
       ]
       portMappings = [
         {
@@ -129,12 +133,18 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
+      dependsOn = [
+        {
+          containerName = "redis-state"
+          condition     = "HEALTHY"
+        }
+      ]
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || true"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
         interval    = 60
         timeout     = 5
         retries     = 2
-        startPeriod = 60
+        startPeriod = 120  # Increased to allow for Redis dependency
       }
       logConfiguration = {
         logDriver = "awslogs"
