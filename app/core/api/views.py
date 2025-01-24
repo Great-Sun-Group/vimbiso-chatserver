@@ -1,6 +1,7 @@
 """Cloud API webhook views"""
 import logging
 import sys
+import time
 from core.messaging.service import MessagingService
 from core.messaging.types import Message as DomainMessage
 from core.messaging.types import MessageRecipient, TemplateContent
@@ -34,24 +35,45 @@ class HealthCheck(APIView):
 
     @staticmethod
     def get(request):
-        try:
-            # Check Redis connectivity using Django's cache framework
-            cache.set('health_check', 'ok', 1)  # Set with 1 second timeout
-            result = cache.get('health_check')
+        max_retries = 3
+        retry_delay = 1  # seconds
+        health_check_key = 'health_check'
+        health_check_ttl = 5  # seconds
 
-            if result != 'ok':
-                raise Exception("Cache check failed")
+        for attempt in range(max_retries):
+            try:
+                # Try to set a value in Redis
+                cache.set(health_check_key, 'ok', health_check_ttl)
 
-            return JsonResponse({
-                "status": "healthy",
-                "redis": "connected"
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Health check failed: {str(e)}")
-            return JsonResponse({
-                "status": "unhealthy",
-                "error": str(e)
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                # Wait a moment to ensure value propagates
+                time.sleep(0.1)
+
+                # Try to get the value back
+                result = cache.get(health_check_key)
+
+                if result == 'ok':
+                    # Successful health check
+                    return JsonResponse({
+                        "status": "healthy",
+                        "redis": "connected",
+                        "attempt": attempt + 1
+                    }, status=status.HTTP_200_OK)
+
+                logger.warning(f"Health check value mismatch on attempt {attempt + 1}")
+
+            except Exception as e:
+                logger.error(f"Health check attempt {attempt + 1} failed: {str(e)}")
+
+            # Don't sleep on the last attempt
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+
+        # All retries failed
+        return JsonResponse({
+            "status": "unhealthy",
+            "redis": "disconnected",
+            "error": "Failed to verify Redis connectivity after multiple attempts"
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 def get_messaging_service(state_manager, channel_type: str):

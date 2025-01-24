@@ -78,15 +78,23 @@ resource "aws_ecs_task_definition" "app" {
         "--bind", "0.0.0.0",
         "--maxmemory", "256mb",
         "--maxmemory-policy", "allkeys-lru",
-        "--save", "",  # Disable persistence
-        "--appendonly", "no"  # Disable AOF persistence
+        "--save", "",
+        "--appendonly", "no",
+        "--maxclients", "10000"
+      ]
+      ulimits = [
+        {
+          name = "nofile",
+          softLimit = 65536,
+          hardLimit = 65536
+        }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli ping"]
-        interval    = 30
+        command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
+        interval    = 10
         timeout     = 5
         retries     = 3
-        startPeriod = 60  # Increased to match grace period
+        startPeriod = 30
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -123,10 +131,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-        interval    = 30
+        interval    = 10
         timeout     = 5
         retries     = 3
-        startPeriod = 60  # Increased to match grace period
+        startPeriod = 90
       }
       logConfiguration = {
         logDriver = "awslogs"
