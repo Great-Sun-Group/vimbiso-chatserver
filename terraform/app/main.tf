@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "if ! getent hosts redis-state || ! nc -z localhost 6379; then echo 'DNS/connectivity check failed' && exit 1; fi && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping"]
+        command     = ["CMD-SHELL", "redis-cli ping"]
         interval    = 10
         timeout     = 5
         retries     = 3
@@ -95,11 +95,11 @@ resource "aws_ecs_task_definition" "app" {
       ]
       # Remove dependsOn to allow independent startup
       healthCheck = {
-        command     = ["CMD-SHELL", "if ! getent hosts redis-state || ! nc -z redis-state 6379; then echo 'Redis DNS/connectivity check failed' && exit 1; fi && curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || exit 1"]
         interval    = 30
         timeout     = 10
         retries     = 5
-        startPeriod = 30
+        startPeriod = 60
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -167,14 +167,25 @@ resource "aws_ecs_service" "app" {
     assign_public_ip = false  # Use NAT Gateway for internet access
   }
 
-  service_registries {
-    registry_arn = aws_service_discovery_service.redis.arn
-  }
-
+  # Remove service registry from service level since containers are in same task
   load_balancer {
     target_group_arn = var.target_group_arn
     container_name   = "app"
     container_port   = 8000
+  }
+
+  # Add DNS settings to ensure proper name resolution within task
+  service_connect_configuration {
+    enabled = true
+    namespace = aws_service_discovery_private_dns_namespace.app.arn
+    service {
+      port_name = "redis"
+      discovery_name = "redis-state"
+      client_alias {
+        port = 6379
+        dns_name = "redis-state"
+      }
+    }
   }
 
   deployment_circuit_breaker {
