@@ -110,10 +110,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "/usr/local/bin/redis-cli -h localhost ping"]
-        interval    = 30
+        interval    = 10
         timeout     = 5
         retries     = 3
-        startPeriod = 60
+        startPeriod = 15
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -158,15 +158,15 @@ resource "aws_ecs_task_definition" "app" {
       dependsOn = [
         {
           containerName = "redis-state"
-          condition     = "START"
+          condition     = "HEALTHY"
         }
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-        interval    = 30
+        interval    = 10
         timeout     = 5
         retries     = 3
-        startPeriod = 60
+        startPeriod = 30
       }
       logConfiguration = {
         logDriver = "awslogs"

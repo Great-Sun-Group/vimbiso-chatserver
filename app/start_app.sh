@@ -12,9 +12,9 @@ echo "Extracted Redis host: $REDIS_HOST"
 
 # Test Redis connectivity with increased timeout
 echo "Waiting for Redis to be ready..."
-max_attempts=30  # 30 attempts * 5s = 150s total
+max_attempts=12  # 12 attempts * 5s = 60s total
 attempt=1
-wait_time=5
+wait_time=5  # Keep 5s to allow Redis to initialize
 
 while true; do
     if [ $attempt -gt $max_attempts ]; then
@@ -60,15 +60,14 @@ if [ "${DJANGO_ENV:-development}" = "production" ]; then
         --bind 0.0.0.0:${PORT:-8000} \
         --workers ${GUNICORN_WORKERS:-2} \
         --worker-class sync \
-        --preload \
-        --max-requests 1000 \
-        --max-requests-jitter 50 \
-        --log-level ${LOG_LEVEL:-info} \
+        --timeout ${GUNICORN_TIMEOUT:-30} \
+        --graceful-timeout 10 \
+        --keep-alive 5 \
+        --log-level debug \
         --access-logfile - \
         --error-logfile - \
-        --timeout ${GUNICORN_TIMEOUT:-120} \
-        --graceful-timeout 30 \
-        --keep-alive 65
+        --capture-output \
+        --enable-stdio-inheritance
 else
     echo "Starting Django development server..."
     # Start Django with stdout/stderr going to console
