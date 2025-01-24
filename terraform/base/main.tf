@@ -221,6 +221,99 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
+# VPC Endpoints for ECS tasks
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ecr-api-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ecr-dkr-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = aws_route_table.private[*].id
+
+  tags = merge(var.tags, {
+    Name = "vimbiso-s3-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.logs"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-logs-endpoint-${var.environment}"
+  })
+}
+
+# Docker Hub VPC endpoint for pulling public images
+resource "aws_vpc_endpoint" "dockerhub" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecs"  # ECS endpoint includes Docker Hub access
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-dockerhub-endpoint-${var.environment}"
+  })
+}
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "vimbiso-vpc-endpoints-${var.environment}"
+  description = "Security group for VPC endpoints"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "vimbiso-vpc-endpoints-${var.environment}"
+  })
+}
+
+# Get current region
+data "aws_region" "current" {}
+
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "vimbiso-cluster-${var.environment}"

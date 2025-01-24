@@ -16,7 +16,28 @@ resource "aws_iam_role" "ecs_execution" {
   })
 }
 
-# Allow execution role to create log streams and put logs
+# Allow execution role to pull images and push logs
+resource "aws_iam_role_policy" "ecs_execution_ecr" {
+  name = "vimbiso-execution-ecr-${var.environment}"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "ecs_execution_logs" {
   name = "vimbiso-execution-logs-${var.environment}"
   role = aws_iam_role.ecs_execution.id
@@ -41,6 +62,7 @@ resource "aws_iam_role_policy" "ecs_execution_logs" {
   })
 }
 
+# Attach basic execution role policy
 resource "aws_iam_role_policy_attachment" "ecs_execution" {
   role       = aws_iam_role.ecs_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"

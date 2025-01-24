@@ -67,7 +67,7 @@ resource "aws_ecs_task_definition" "app" {
       name      = "redis-state"
       image     = "redis:7.0-alpine"
       essential = true
-      memory    = 512
+      memory    = 384
       cpu       = 256
       portMappings = [
         {
@@ -80,9 +80,10 @@ resource "aws_ecs_task_definition" "app" {
         "redis-server",
         "--protected-mode", "no",
         "--bind", "0.0.0.0",
-        "--maxmemory", "384mb",
+        "--maxmemory", "356mb",  # Leave some overhead for Redis process
         "--maxmemory-policy", "allkeys-lru",
-        "--save", ""
+        "--save", "",  # Disable persistence
+        "--appendonly", "no"  # Disable AOF
       ]
       ulimits = [
         {
@@ -92,11 +93,11 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD", "nc", "-z", "localhost", "6379"]
+        command     = ["CMD", "redis-cli", "ping"]
         interval    = 30
         timeout     = 5
-        retries     = 2
-        start_period = 30
+        retries     = 3
+        startPeriod = 60
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -112,7 +113,7 @@ resource "aws_ecs_task_definition" "app" {
       name      = "app"
       image     = var.docker_image
       essential = true
-      memory    = var.task_memory - 512  # Remaining memory after Redis
+      memory    = var.task_memory - 384  # Remaining memory after Redis (1664 MiB)
       cpu       = var.task_cpu - 256     # Remaining CPU after Redis
       command   = ["/app/start_app.sh"]
       user      = "appuser"  # Run as non-root user
