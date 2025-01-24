@@ -252,7 +252,3 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
     ServiceName = aws_ecs_service.app.name
   }
 }
-
-# Get current region and account ID
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
