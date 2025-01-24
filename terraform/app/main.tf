@@ -111,6 +111,8 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
       memory    = var.task_memory - 512  # Remaining memory after Redis
       cpu       = var.task_cpu - 256     # Remaining CPU after Redis
+      command   = ["/app/start_app.sh"]
+      user      = "appuser"  # Run as non-root user
       environment = [
         { name = "DJANGO_ENV", value = var.environment },
         { name = "DJANGO_SECRET", value = var.django_secret },
@@ -172,7 +174,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 180  # Increased to match container start periods
+  health_check_grace_period_seconds = 300  # 5 minutes to allow for startup and migrations
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
