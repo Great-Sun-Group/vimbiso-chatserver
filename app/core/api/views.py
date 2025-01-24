@@ -1,6 +1,7 @@
 """Cloud API webhook views"""
 import logging
 import sys
+
 from core.messaging.service import MessagingService
 from core.messaging.types import Message as DomainMessage
 from core.messaging.types import MessageRecipient, TemplateContent
@@ -60,18 +61,32 @@ class HealthCheck(APIView):
             redis_status = "unhealthy"
             logger.error("Redis marked as unhealthy by startup script")
 
-        health_status = {
-            "status": "healthy",  # Keep app healthy even if Redis is down
-            "components": {
-                "app": "healthy",
-                "redis": redis_status
+        try:
+            # Ensure proper JSON structure
+            health_status = {
+                "status": "healthy",  # Keep app healthy even if Redis is down
+                "components": {
+                    "app": "healthy",
+                    "redis": redis_status
+                }
             }
-        }
 
-        # Enhanced logging for health status
-        logger.info(f"Health check status: {health_status}")
+            # Enhanced logging for health status
+            logger.info(f"Health check status: {health_status}")
 
-        return JsonResponse(health_status, status=status.HTTP_200_OK)
+            # Use DRF's Response for consistent JSON handling
+            from rest_framework.response import Response
+            return Response(
+                health_status,
+                status=status.HTTP_200_OK,
+                content_type='application/json'
+            )
+        except Exception as e:
+            logger.error(f"Error generating health check response: {str(e)}")
+            return Response(
+                {"status": "error", "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 def get_messaging_service(state_manager, channel_type: str):

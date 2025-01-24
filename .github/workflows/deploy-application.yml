@@ -244,9 +244,24 @@ jobs:
                   --query 'LoadBalancers[0].DNSName' \
                   --output text)
                 HEALTH_CHECK_URL="http://${ALB_DNS}/health/"
-                COMPONENT_HEALTH=$(curl -s $HEALTH_CHECK_URL || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
-                echo "Component Health Status:"
-                echo "$COMPONENT_HEALTH" | jq '.'
+                echo "Attempting health check at: $HEALTH_CHECK_URL"
+                echo "Raw curl output with -i to see headers:"
+                curl -i $HEALTH_CHECK_URL
+                echo "Raw curl output saved to variable:"
+                COMPONENT_HEALTH=$(curl -s $HEALTH_CHECK_URL | tr -d '\r' || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
+                echo "Hex dump of response:"
+                echo "$COMPONENT_HEALTH" | xxd
+                echo "Response length:"
+                echo -n "$COMPONENT_HEALTH" | wc -c
+                echo "Attempting to parse response:"
+                if echo "$COMPONENT_HEALTH" | jq -e '.' >/dev/null 2>&1; then
+                    echo "Valid JSON response:"
+                    echo "$COMPONENT_HEALTH" | jq '.'
+                else
+                    echo "Invalid JSON response"
+                    echo "HTTP Response Code from curl:"
+                    curl -s -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL"
+                fi
 
                 APP_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.app')
                 REDIS_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.redis')
