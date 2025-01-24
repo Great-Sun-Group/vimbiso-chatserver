@@ -311,8 +311,20 @@ resource "aws_security_group" "vpc_endpoints" {
   })
 }
 
+# Explicitly set region for endpoints
+provider "aws" {
+  region = "af-south-1"  # Cape Town region
+}
+
 # Get current region
 data "aws_region" "current" {}
+
+# Add region to tags
+locals {
+  common_tags = merge(var.tags, {
+    Region = data.aws_region.current.name
+  })
+}
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {

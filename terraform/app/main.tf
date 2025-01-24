@@ -1,4 +1,21 @@
-# ECR Repository
+# ECR Repositories
+resource "aws_ecr_repository" "redis" {
+  name = "redis-${var.environment}"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  # Prevent accidental deletion of the repository
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "aws_ecr_repository" "app" {
   name = "vimbiso-${var.environment}"
 
@@ -65,7 +82,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name      = "redis-state"
-      image     = "redis:7.0-alpine"
+      image     = "${aws_ecr_repository.redis.repository_url}:7.0-alpine"
       essential = true
       memory    = 384
       cpu       = 256
