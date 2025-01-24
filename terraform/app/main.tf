@@ -174,7 +174,6 @@ resource "aws_ecs_service" "app" {
         dns_name = "redis-state"
         port     = 6379
       }
-      ingress_port_override = 6379
     }
   }
 
