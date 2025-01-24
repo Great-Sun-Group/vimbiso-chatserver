@@ -10,9 +10,14 @@ resource "aws_ecr_repository" "redis" {
     encryption_type = "AES256"
   }
 
-  # Prevent accidental deletion of the repository
+  # Prevent accidental deletion and handle creation conflicts
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      name,
+      image_scanning_configuration,
+      encryption_configuration
+    ]
   }
 }
 
@@ -27,9 +32,14 @@ resource "aws_ecr_repository" "app" {
     encryption_type = "AES256"
   }
 
-  # Prevent accidental deletion of the repository
+  # Prevent accidental deletion and handle creation conflicts
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      name,
+      image_scanning_configuration,
+      encryption_configuration
+    ]
   }
 }
 
