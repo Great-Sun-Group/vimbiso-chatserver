@@ -98,6 +98,7 @@
                 "iam:AttachRolePolicy",
                 "iam:DetachRolePolicy",
                 "iam:TagRole",
+                "iam:UntagRole",
                 "iam:PassRole",
                 "iam:ListRolePolicies",
                 "iam:ListAttachedRolePolicies",
