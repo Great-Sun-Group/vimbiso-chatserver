@@ -214,7 +214,7 @@ jobs:
               exit 1
             fi
 
-            # Check container health status
+              # Check container health status
             if [ ! -z "$RUNNING_TASKS" ]; then
               HEALTH_STATUS=$(aws ecs describe-tasks \
                 --cluster "vimbiso-cluster-$ENVIRONMENT" \
@@ -225,9 +225,33 @@ jobs:
               REDIS_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "redis-state") | .health')
               APP_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "app") | .health')
 
-              # Check for success - both containers must be HEALTHY
+              # If app is running, check component health from health endpoint
+              if [ "$APP_HEALTH" != "UNKNOWN" ]; then
+                echo "Checking component health status..."
+                ALB_DNS=$(aws ecs describe-services \
+                  --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                  --services "vimbiso-service-$ENVIRONMENT" \
+                  --query 'services[0].loadBalancers[0].targetGroupArn' \
+                  --output text | sed 's/\/.*$//' | xargs aws elbv2 describe-load-balancers --load-balancer-arns | jq -r '.LoadBalancers[0].DNSName')
+                HEALTH_CHECK_URL="http://${ALB_DNS}/health/"
+                COMPONENT_HEALTH=$(curl -s $HEALTH_CHECK_URL || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
+                echo "Component Health Status:"
+                echo "$COMPONENT_HEALTH" | jq '.'
+
+                APP_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.app')
+                REDIS_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.redis')
+
+                echo "Container Health Status:"
+                echo "  App Container: $APP_HEALTH"
+                echo "  Redis Container: $REDIS_HEALTH"
+                echo "Component Health Status:"
+                echo "  App Component: $APP_COMPONENT_HEALTH"
+                echo "  Redis Component: $REDIS_COMPONENT_HEALTH"
+              fi
+
+              # Check for success - app container must be HEALTHY and app component must be healthy
               if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ] \
-                 && [ "$REDIS_HEALTH" = "HEALTHY" ] && [ "$APP_HEALTH" = "HEALTHY" ]; then
+                 && [ "$APP_HEALTH" = "HEALTHY" ] && [ "$APP_COMPONENT_HEALTH" = "healthy" ]; then
                 if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
                   echo "Deployment completed successfully - All containers healthy"
                   DEPLOYMENT_DONE=true
@@ -237,7 +261,7 @@ jobs:
 
               # If containers are running but not healthy after grace period, show logs
               if [ $ELAPSED_TIME -gt $GRACE_PERIOD ] && [ "$RUNNING_COUNT" -gt 0 ] \
-                 && { [ "$REDIS_HEALTH" != "HEALTHY" ] || [ "$APP_HEALTH" != "HEALTHY" ]; }; then
+                 && { [ "$APP_HEALTH" != "HEALTHY" ] || [ "$APP_COMPONENT_HEALTH" != "healthy" ]; }; then
                 echo "Containers running but not healthy after grace period. Fetching logs..."
                 TASK_ID=$(echo "$RUNNING_TASKS" | awk -F'/' '{print $NF}')
                 START_TIME=$(($(date +%s) - 300))
@@ -277,3 +301,7 @@ jobs:
           echo "Health Check:"
           echo "------------"
           echo "Endpoint: https://$(terraform output -raw domain_name)/health/"
+          echo ""
+          echo "Component Status:"
+          HEALTH_CHECK_URL="https://$(terraform output -raw domain_name)/health/"
+          curl -s $HEALTH_CHECK_URL | jq '.'

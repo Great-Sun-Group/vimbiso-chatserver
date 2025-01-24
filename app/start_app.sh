@@ -24,14 +24,26 @@ echo "Extracted Redis host: $REDIS_HOST"
         fi
 
         echo "Attempting Redis connection to $REDIS_HOST (attempt $attempt/$max_attempts)..."
-        echo "Testing DNS resolution..."
-        if ! getent hosts "$REDIS_HOST" > /dev/null; then
-            echo "DNS resolution failed for $REDIS_HOST"
-        else
-            echo "DNS resolution successful for $REDIS_HOST"
-        fi
+    echo "Testing DNS resolution..."
+    echo "Network interfaces:"
+    ip addr show || true
 
-        echo "Testing Redis connection..."
+    echo "Network routes:"
+    ip route || true
+
+    echo "DNS configuration:"
+    cat /etc/resolv.conf || true
+
+    echo "Attempting DNS lookup for $REDIS_HOST..."
+    getent hosts "$REDIS_HOST" || true
+
+    echo "Testing all local DNS servers..."
+    for ns in $(grep nameserver /etc/resolv.conf | awk '{print $2}'); do
+        echo "Testing nameserver $ns..."
+        nslookup "$REDIS_HOST" "$ns" || true
+    done
+
+    echo "Testing Redis connection..."
         if timeout 10 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
             echo "Redis connection successful!"
             break

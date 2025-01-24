@@ -23,11 +23,13 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name      = "redis-state"
-      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
-      essential = true
-      memory    = 384
-      cpu       = 256
+      name             = "redis-state"
+      image            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
+      essential        = true
+      memory           = 384
+      cpu              = 256
+      dnsSearchDomains = ["local"]
+      dnsServers       = ["169.254.169.253"]  # AWS VPC DNS
       portMappings = [
         {
           containerPort = 6379

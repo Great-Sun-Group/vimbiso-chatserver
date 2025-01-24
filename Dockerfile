@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     redis-tools \
     netcat-traditional \
+    iproute2 \
+    dnsutils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -68,7 +70,7 @@ COPY requirements /app/requirements
 RUN pip install --no-cache-dir -r requirements/prod.txt
 
 # Remove build dependencies but keep runtime dependencies
-RUN apt-mark manual redis-tools curl netcat-traditional && \
+RUN apt-mark manual redis-tools curl netcat-traditional iproute2 dnsutils && \
     apt-get purge -y build-essential && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
