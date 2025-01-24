@@ -10,35 +10,43 @@ echo "REDIS_URL from environment: ${REDIS_URL:-not set}"
 REDIS_HOST=$(echo "${REDIS_URL:-redis://localhost:6379/0}" | sed -E 's|redis://([^:/]+).*|\1|')
 echo "Extracted Redis host: $REDIS_HOST"
 
-# Test Redis connectivity with increased timeout
-echo "Waiting for Redis to be ready..."
-max_attempts=10  # 10 attempts * 10s = 100s total
-attempt=1
-wait_time=10  # Increased wait time between attempts
+# Test Redis connectivity in background
+(
+    echo "Starting Redis connection attempts in background..."
+    max_attempts=30  # 30 attempts * 10s = 5 minutes total
+    attempt=1
+    wait_time=10
 
-while true; do
-    if [ $attempt -gt $max_attempts ]; then
-        echo "Redis is still unavailable after $max_attempts attempts - giving up"
-        echo "Last Redis connection attempt:"
-        redis-cli -h "$REDIS_HOST" ping || true
-        exit 1
-    fi
+    while true; do
+        if [ $attempt -gt $max_attempts ]; then
+            echo "Redis is still unavailable after $max_attempts attempts - will continue running without Redis"
+            break
+        fi
 
-    echo "Attempting Redis connection (attempt $attempt/$max_attempts waiting ${wait_time}s)..."
+        echo "Attempting Redis connection to $REDIS_HOST (attempt $attempt/$max_attempts)..."
+        echo "Testing DNS resolution..."
+        if ! getent hosts "$REDIS_HOST" > /dev/null; then
+            echo "DNS resolution failed for $REDIS_HOST"
+        else
+            echo "DNS resolution successful for $REDIS_HOST"
+        fi
 
-    # Try Redis connection with increased timeout
-    if timeout 10 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
-        echo "Redis connection successful!"
-        break
-    else
-        echo "Redis connection failed (attempt $attempt). Error code: $?"
-        echo "Retrying in ${wait_time}s..."
+        echo "Testing Redis connection..."
+        if timeout 10 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
+            echo "Redis connection successful!"
+            break
+        else
+            echo "Redis connection failed (attempt $attempt). Error code: $?"
+            echo "Network connectivity test:"
+            nc -zv "$REDIS_HOST" 6379 || echo "Cannot establish TCP connection to $REDIS_HOST:6379"
+        fi
+
         sleep $wait_time
         attempt=$((attempt + 1))
-    fi
-done
+    done
+) &
 
-echo "Redis is ready!"
+# Continue with app startup while Redis connection attempts happen in background
 
 # In production collect static files
 if [ "${DJANGO_ENV:-development}" = "production" ]; then

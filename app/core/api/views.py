@@ -34,16 +34,26 @@ class HealthCheck(APIView):
 
     @staticmethod
     def get(request):
+        health_status = {
+            "status": "healthy",
+            "components": {
+                "app": "healthy",
+                "redis": "unknown"
+            }
+        }
+
+        # Check Redis connectivity
         try:
-            # Simple Redis ping check
             cache.set('health_check', 'ok')
-            return JsonResponse({"status": "healthy"}, status=status.HTTP_200_OK)
+            health_status["components"]["redis"] = "healthy"
         except Exception as e:
-            logger.error(f"Health check failed: {str(e)}")
-            return JsonResponse(
-                {"status": "unhealthy", "error": str(e)},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
+            logger.error(f"Redis health check failed: {str(e)}")
+            health_status["components"]["redis"] = "unhealthy"
+            # Don't fail the whole check just because Redis is down
+
+        # Return 200 if app is running, even if Redis is down
+        # This lets ECS know the app itself is healthy
+        return JsonResponse(health_status, status=status.HTTP_200_OK)
 
 
 def get_messaging_service(state_manager, channel_type: str):

@@ -28,6 +28,8 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
       memory    = 384
       cpu       = 256
+      hostname  = "redis-state"  # Explicitly set hostname
+      links     = []  # Empty links array to ensure hostname resolution
       portMappings = [
         {
           containerPort = 6379
@@ -51,7 +53,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "/usr/local/bin/redis-cli -h localhost ping"]
+        command     = ["CMD-SHELL", "redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping || (echo 'Local Redis: ' && redis-cli -h localhost ping && echo 'External Redis: ' && redis-cli -h 0.0.0.0 ping && exit 1)"]
         interval    = 30            # More forgiving health check interval
         timeout     = 10           # Increased timeout
         retries     = 5            # More retries before failing
@@ -75,6 +77,7 @@ resource "aws_ecs_task_definition" "app" {
       cpu       = var.task_cpu - 256     # Remaining CPU after Redis
       command   = ["/app/start_app.sh"]
       user      = "appuser"  # Run as non-root user
+      links     = ["redis-state:redis-state"]  # Explicit container linking
       environment = [
         { name = "DJANGO_ENV", value = var.environment },
         { name = "DJANGO_SECRET", value = var.django_secret },
@@ -97,18 +100,13 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
-      dependsOn = [
-        {
-          containerName = "redis-state"
-          condition     = "HEALTHY"
-        }
-      ]
+      # Remove dependsOn to allow independent startup
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-        interval    = 30            # Match Redis health check interval
-        timeout     = 10           # Increased timeout
-        retries     = 5            # More retries
-        startPeriod = 60           # Match Redis startup grace period
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"app\":\"healthy\"' || (curl -v http://localhost:8000/health/ && exit 1)"]
+        interval    = 30
+        timeout     = 10
+        retries     = 5
+        startPeriod = 30           # Reduced since we're not waiting for Redis
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -138,7 +136,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 180  # 3 minutes to match deployment workflow grace period
+  health_check_grace_period_seconds = 120  # Reduced since containers start independently
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
