@@ -2,9 +2,9 @@ name: Deploy Application
 
 on:
   push:
-    - dev
-    - prod
-    - "*deploy*"
+    -dev
+    -prod
+    -"*deploy*"
   workflow_dispatch:
 
 jobs:
