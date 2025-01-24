@@ -17,7 +17,6 @@ services:
       - ALLOWED_HOSTS=*
       - DJANGO_SECRET=local-secret-key
       - REDIS_URL=redis://redis-state:6379/0
-      - DEPLOYED_TO_AWS=false
       - WHATSAPP_API_URL=${WHATSAPP_API_URL}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
