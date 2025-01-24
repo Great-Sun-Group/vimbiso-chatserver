@@ -84,11 +84,11 @@ RUN mkdir -p \
     /app/data/migrations \
     && touch /app/data/db.sqlite3 \
     && chown -R appuser:appuser /app \
-    && chmod -R 755 /app/data \
+    && chmod -R 777 /app/data \
     && chmod +x /app/start_app.sh \
-    && find /app/data -type d -exec chmod 755 {} \; \
-    && find /app/data -type f -exec chmod 644 {} \; \
-    && chown appuser:appuser /app/data/db.sqlite3
+    && find /app/data -type d -exec chmod 777 {} \; \
+    && find /app/data -type f -exec chmod 666 {} \; \
+    && chown -R appuser:appuser /app/data
 
 # Note: Not switching to appuser here since task definition handles user switching
 # This allows the entrypoint script to run as root and switch users as needed

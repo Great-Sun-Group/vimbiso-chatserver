@@ -27,15 +27,30 @@ resource "aws_iam_role_policy" "ecs_execution" {
       {
         Effect = "Allow"
         Action = [
-          "ecr:GetAuthorizationToken",
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage",
+          "ecr:BatchGetImage"
+        ]
+        Resource = [
+          "arn:aws:ecr:af-south-1:*:repository/vimbiso-${var.environment}",
+          "arn:aws:ecr:af-south-1:*:repository/redis-${var.environment}"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "*"
+        Resource = "arn:aws:logs:af-south-1:*:log-group:/ecs/vimbiso-${var.environment}:*"
       }
     ]
   })
