@@ -5,7 +5,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-vpc-${var.environment}"
+    Name = "vimbiso-vpc-${var.environment}"
   })
 }
 
@@ -21,7 +21,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-public-${var.environment}-${count.index + 1}"
+    Name = "vimbiso-public-${var.environment}-${count.index + 1}"
   })
 }
 
@@ -33,7 +33,7 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-private-${var.environment}-${count.index + 1}"
+    Name = "vimbiso-private-${var.environment}-${count.index + 1}"
   })
 }
 
@@ -42,7 +42,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-igw-${var.environment}"
+    Name = "vimbiso-igw-${var.environment}"
   })
 }
 
@@ -57,7 +57,7 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = aws_subnet.public[count.index].id
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-nat-${var.environment}-${count.index + 1}"
+    Name = "vimbiso-nat-${var.environment}-${count.index + 1}"
   })
 }
 
@@ -71,7 +71,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-public-${var.environment}"
+    Name = "vimbiso-public-${var.environment}"
   })
 }
 
@@ -85,7 +85,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-private-${var.environment}-${count.index + 1}"
+    Name = "vimbiso-private-${var.environment}-${count.index + 1}"
   })
 }
 
@@ -104,7 +104,7 @@ resource "aws_route_table_association" "private" {
 
 # Security Groups
 resource "aws_security_group" "alb" {
-  name        = "vimbiso-pay-alb-${var.environment}"
+  name        = "vimbiso-alb-${var.environment}"
   description = "ALB Security Group"
   vpc_id      = aws_vpc.main.id
 
@@ -130,12 +130,12 @@ resource "aws_security_group" "alb" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-alb-${var.environment}"
+    Name = "vimbiso-alb-${var.environment}"
   })
 }
 
 resource "aws_security_group" "ecs" {
-  name        = "vimbiso-pay-ecs-${var.environment}"
+  name        = "vimbiso-ecs-${var.environment}"
   description = "ECS Tasks Security Group"
   vpc_id      = aws_vpc.main.id
 
@@ -154,13 +154,13 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-ecs-${var.environment}"
+    Name = "vimbiso-ecs-${var.environment}"
   })
 }
 
 # ALB
 resource "aws_lb" "main" {
-  name               = "vimbiso-pay-alb-${var.environment}"
+  name               = "vimbiso-alb-${var.environment}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -169,7 +169,7 @@ resource "aws_lb" "main" {
   enable_deletion_protection = var.environment == "production"
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-alb-${var.environment}"
+    Name = "vimbiso-alb-${var.environment}"
   })
 
   lifecycle {
@@ -186,7 +186,7 @@ resource "random_string" "target_group_suffix" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name        = "vimbiso-pay-tg-${var.environment}-${random_string.target_group_suffix.result}"
+  name        = "vimbiso-tg-${var.environment}-${random_string.target_group_suffix.result}"
   port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -204,7 +204,7 @@ resource "aws_lb_target_group" "app" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-tg-${var.environment}"
+    Name = "vimbiso-tg-${var.environment}"
   })
 
   lifecycle {
@@ -214,7 +214,7 @@ resource "aws_lb_target_group" "app" {
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
-  name = "vimbiso-pay-cluster-${var.environment}"
+  name = "vimbiso-cluster-${var.environment}"
 
   setting {
     name  = "containerInsights"
@@ -222,6 +222,6 @@ resource "aws_ecs_cluster" "main" {
   }
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-cluster-${var.environment}"
+    Name = "vimbiso-cluster-${var.environment}"
   })
 }

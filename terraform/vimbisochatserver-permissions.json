@@ -7,10 +7,10 @@
                 "s3:*"
             ],
             "Resource": [
-                "arn:aws:s3:::vimbiso-chatserver-terraform-state-*",
-                "arn:aws:s3:::vimbiso-chatserver-terraform-state-*/*",
-                "arn:aws:s3:::vimbiso-chatserver-alb-logbucket-*",
-                "arn:aws:s3:::vimbiso-chatserver-alb-logbucket-*/*"
+                "arn:aws:s3:::vimbiso-terraform-state-*",
+                "arn:aws:s3:::vimbiso-terraform-state-*/*",
+                "arn:aws:s3:::vimbiso-alb-logbucket-*",
+                "arn:aws:s3:::vimbiso-alb-logbucket-*/*"
             ]
         },
         {
@@ -18,7 +18,9 @@
             "Action": [
                 "dynamodb:*"
             ],
-            "Resource": "arn:aws:dynamodb:af-south-1:*:table/vimbiso-chatserver-terraform-state-lock-*"
+            "Resource": [
+                "arn:aws:dynamodb:af-south-1:*:table/vimbiso-terraform-state-lock-*"
+            ]
         },
         {
             "Effect": "Allow",
@@ -66,8 +68,7 @@
                 "ecr:*"
             ],
             "Resource": [
-                "arn:aws:ecr:af-south-1:*:repository/vimbiso-pay-*",
-                "arn:aws:ecr:af-south-1:*:repository/vimbiso-chatserver-*"
+                "arn:aws:ecr:af-south-1:*:repository/vimbiso-*"
             ]
         },
         {

@@ -1,6 +1,6 @@
 # ECS Task Execution Role
 resource "aws_iam_role" "ecs_execution" {
-  name = "vimbiso-pay-execution-role-${var.environment}"
+  name = "vimbiso-execution-role-${var.environment}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -23,7 +23,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
 
 # ECS Task Role
 resource "aws_iam_role" "ecs_task" {
-  name = "vimbiso-pay-task-role-${var.environment}"
+  name = "vimbiso-task-role-${var.environment}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -41,7 +41,7 @@ resource "aws_iam_role" "ecs_task" {
 
 # Allow ECS tasks to write logs
 resource "aws_iam_role_policy" "ecs_task_logs" {
-  name = "vimbiso-pay-task-logs-${var.environment}"
+  name = "vimbiso-task-logs-${var.environment}"
   role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({

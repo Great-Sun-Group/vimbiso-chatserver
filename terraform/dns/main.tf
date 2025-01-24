@@ -3,7 +3,7 @@ resource "aws_route53_zone" "main" {
   name = var.domain_name
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-zone-${var.environment}"
+    Name = "vimbiso-zone-${var.environment}"
   })
 }
 
@@ -13,7 +13,7 @@ resource "aws_acm_certificate" "main" {
   validation_method = "DNS"
 
   tags = merge(var.tags, {
-    Name = "vimbiso-pay-cert-${var.environment}"
+    Name = "vimbiso-cert-${var.environment}"
   })
 
   lifecycle {
