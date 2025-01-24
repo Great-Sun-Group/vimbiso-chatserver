@@ -30,6 +30,7 @@ resource "aws_ecs_task_definition" "app" {
       cpu       = 256
       portMappings = [
         {
+          name = "redis"
           containerPort = 6379
           hostPort     = 6379
           protocol     = "tcp"
@@ -174,17 +175,25 @@ resource "aws_ecs_service" "app" {
     container_port   = 8000
   }
 
-  # Add DNS settings to ensure proper name resolution within task
+  # Configure Service Connect for container-to-container communication
   service_connect_configuration {
     enabled = true
-    namespace = aws_service_discovery_private_dns_namespace.app.arn
-    service {
-      port_name = "redis"
-      discovery_name = "redis-state"
-      client_alias {
-        port = 6379
-        dns_name = "redis-state"
+    log_configuration {
+      log_driver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.app.name
+        "awslogs-region"        = data.aws_region.current.name
+        "awslogs-stream-prefix" = "service-connect"
       }
+    }
+    service {
+      discovery_name = "redis-state"
+      port_name      = "redis"
+      client_alias {
+        dns_name = "redis-state"
+        port     = 6379
+      }
+      ingress_port_override = 6379
     }
   }
 
