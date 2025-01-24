@@ -147,6 +147,14 @@ resource "aws_security_group" "ecs" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  # Allow Redis communication
+  ingress {
+    protocol  = "tcp"
+    from_port = 6379
+    to_port   = 6379
+    self      = true
+  }
+
   # Allow internal communication between containers in the same security group
   ingress {
     protocol  = "tcp"

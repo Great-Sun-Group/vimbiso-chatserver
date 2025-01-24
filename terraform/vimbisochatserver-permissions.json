@@ -65,24 +65,26 @@
         {
             "Effect": "Allow",
             "Action": [
+                "ecr:GetAuthorizationToken",
+                "ecr:DescribeRepositories",
+                "ecr:DescribeRegistry",
+                "ecr:PutRegistryScanningConfiguration",
+                "ecr:GetRegistryScanningConfiguration",
+                "inspector2:Enable",
+                "inspector2:Disable",
+                "inspector2:ListAccountPermissions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
                 "ecr:*"
             ],
             "Resource": [
                 "arn:aws:ecr:af-south-1:*:repository/vimbiso-*",
                 "arn:aws:ecr:af-south-1:*:repository/redis-*"
             ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:PutRegistryScanningConfiguration",
-        "ecr:GetRegistryScanningConfiguration",
-        "inspector2:Enable",
-        "inspector2:Disable",
-        "inspector2:ListAccountPermissions"
-            ],
-            "Resource": "*"
         },
         {
             "Effect": "Allow",
