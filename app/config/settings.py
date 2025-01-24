@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from decouple import config as env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,7 +45,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Storage paths
 BASE_PATH = BASE_DIR / 'data'
-os.makedirs(BASE_PATH, exist_ok=True)
+os.makedirs(BASE_PATH, exist_ok=True, mode=0o755)  # Ensure proper permissions
 
 # Static files configuration
 STATIC_URL = "/static/"

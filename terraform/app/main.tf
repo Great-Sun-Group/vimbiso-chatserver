@@ -115,6 +115,7 @@ resource "aws_ecs_task_definition" "app" {
       environment = [
         { name = "DJANGO_ENV", value = var.environment },
         { name = "DJANGO_SECRET", value = var.django_secret },
+        { name = "DEPLOYED_TO_AWS", value = "true" },
         { name = "MYCREDEX_APP_URL", value = var.mycredex_app_url },
         { name = "CLIENT_API_KEY", value = var.client_api_key },
         { name = "WHATSAPP_API_URL", value = var.whatsapp_api_url },

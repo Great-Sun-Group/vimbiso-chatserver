@@ -41,6 +41,30 @@ resource "aws_iam_role_policy" "ecs_execution_logs" {
   })
 }
 
+# Allow execution role to pull from ECR
+resource "aws_iam_role_policy" "ecs_execution_ecr" {
+  name = "vimbiso-execution-ecr-${var.environment}"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = [
+          "arn:aws:ecr:af-south-1:${data.aws_caller_identity.current.account_id}:repository/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_execution" {
   role       = aws_iam_role.ecs_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
