@@ -82,7 +82,7 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://redis-state:6379/0" },
+        { name = "REDIS_URL", value = "redis://localhost:6379/0" },
         { name = "ALLOWED_HOSTS", value = "*" },  # Allow all hosts since behind ALB
         { name = "DEBUG", value = "false" },
         { name = "APP_LOG_LEVEL", value = "INFO" },
@@ -161,26 +161,11 @@ resource "aws_ecs_service" "app" {
     container_port   = 8000
   }
 
-  # Configure Service Connect for container-to-container communication
-  service_connect_configuration {
-    enabled = true
-    namespace = aws_service_discovery_private_dns_namespace.app.name
-    log_configuration {
-      log_driver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.app.name
-        "awslogs-region"        = data.aws_region.current.name
-        "awslogs-stream-prefix" = "service-connect"
-      }
-    }
-    service {
-      discovery_name = "redis-state"
-      port_name      = "redis"
-      client_alias {
-        dns_name = "redis-state"
-        port     = 6379
-      }
-    }
+  # Use service registries for Redis discovery
+  service_registries {
+    registry_arn = aws_service_discovery_service.redis.arn
+    container_name = "redis-state"
+    container_port = 6379
   }
 
   deployment_circuit_breaker {
