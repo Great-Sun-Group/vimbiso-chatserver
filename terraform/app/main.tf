@@ -163,11 +163,11 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "python -c 'import http.client; conn = http.client.HTTPConnection(\"localhost\", 8000); conn.request(\"GET\", \"/health/\"); resp = conn.getresponse(); exit(0 if resp.status == 200 else 1)'"]
-        interval    = 60
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+        interval    = 30
         timeout     = 5
-        retries     = 2
-        startPeriod = 120  # Increased to allow for Redis dependency
+        retries     = 3
+        startPeriod = 60
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -197,7 +197,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 300  # 5 minutes to allow for startup and migrations
+  health_check_grace_period_seconds = 120  # 2 minutes should be enough for initial startup
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime

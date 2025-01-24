@@ -16,9 +16,9 @@ resource "aws_iam_role" "ecs_execution" {
   })
 }
 
-# Allow execution role to pull images and push logs
-resource "aws_iam_role_policy" "ecs_execution_ecr" {
-  name = "vimbiso-execution-ecr-${var.environment}"
+# Essential permissions for task execution
+resource "aws_iam_role_policy" "ecs_execution" {
+  name = "vimbiso-execution-${var.environment}"
   role = aws_iam_role.ecs_execution.id
 
   policy = jsonencode({
@@ -30,33 +30,12 @@ resource "aws_iam_role_policy" "ecs_execution_ecr" {
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "ecs_execution_logs" {
-  name = "vimbiso-execution-logs-${var.environment}"
-  role = aws_iam_role.ecs_execution.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
+          "ecr:BatchGetImage",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogStreams"
+          "logs:PutLogEvents"
         ]
-        Resource = [
-          "${aws_cloudwatch_log_group.app.arn}",
-          "${aws_cloudwatch_log_group.app.arn}:*"
-        ]
+        Resource = "*"
       }
     ]
   })
@@ -86,9 +65,9 @@ resource "aws_iam_role" "ecs_task" {
   })
 }
 
-# Allow ECS tasks to write logs
-resource "aws_iam_role_policy" "ecs_task_logs" {
-  name = "vimbiso-task-logs-${var.environment}"
+# Allow ECS tasks to write logs and use SSM for debugging
+resource "aws_iam_role_policy" "ecs_task_permissions" {
+  name = "vimbiso-task-permissions-${var.environment}"
   role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
@@ -98,9 +77,20 @@ resource "aws_iam_role_policy" "ecs_task_logs" {
         Effect = "Allow"
         Action = [
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
         ]
         Resource = "${aws_cloudwatch_log_group.app.arn}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
       }
     ]
   })

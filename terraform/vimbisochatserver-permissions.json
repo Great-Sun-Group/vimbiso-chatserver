@@ -68,7 +68,8 @@
                 "ecr:*"
             ],
             "Resource": [
-                "arn:aws:ecr:af-south-1:*:repository/vimbiso-*"
+                "arn:aws:ecr:af-south-1:*:repository/vimbiso-*",
+                "arn:aws:ecr:af-south-1:*:repository/redis-*"
             ]
         },
         {

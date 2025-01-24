@@ -156,16 +156,25 @@ jobs:
 
             # Check for failures
             if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-              echo "Failed tasks detected after grace period. Fetching logs..."
+              echo "Failed tasks detected after grace period. Fetching details..."
               FAILED_TASKS=$(aws ecs list-tasks \
-              --cluster "vimbiso-cluster-$ENVIRONMENT" \
-              --service-name "vimbiso-service-$ENVIRONMENT" \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --service-name "vimbiso-service-$ENVIRONMENT" \
                 --desired-status STOPPED \
                 --query 'taskArns[]' \
                 --output text)
 
               if [ ! -z "$FAILED_TASKS" ]; then
+                echo "Getting task failure reasons..."
                 echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
+                  echo "Task ARN: $TASK_ARN"
+                  aws ecs describe-tasks \
+                    --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                    --tasks "$TASK_ARN" \
+                    --query 'tasks[].{reason: stoppedReason, containers: containers[].{name: name, reason: reason}}' \
+                    --output json | jq '.'
+
+                  # Still try to get logs if available
                   TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
                   START_TIME=$(($(date +%s) - 300))
                   get_container_logs "$TASK_ID" "redis-state" "$START_TIME"

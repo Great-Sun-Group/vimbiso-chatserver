@@ -15,13 +15,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    locales \
-    netcat-traditional \
     redis-tools \
-    gosu \
-    dnsutils \
-    && locale-gen en_US.UTF-8 \
-    && update-locale \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

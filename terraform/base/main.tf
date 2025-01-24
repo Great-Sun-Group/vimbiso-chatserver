@@ -221,18 +221,14 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-# VPC Endpoints for ECS tasks
+# Essential VPC Endpoints for ECS in private subnets
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id             = aws_vpc.main.id
   service_name       = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
   vpc_endpoint_type  = "Interface"
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
-
   private_dns_enabled = true
-  tags = merge(var.tags, {
-    Name = "vimbiso-ecr-api-endpoint-${var.environment}"
-  })
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
@@ -241,11 +237,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   vpc_endpoint_type  = "Interface"
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
-
   private_dns_enabled = true
-  tags = merge(var.tags, {
-    Name = "vimbiso-ecr-dkr-endpoint-${var.environment}"
-  })
 }
 
 resource "aws_vpc_endpoint" "s3" {
@@ -253,10 +245,15 @@ resource "aws_vpc_endpoint" "s3" {
   service_name = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids = aws_route_table.private[*].id
+}
 
-  tags = merge(var.tags, {
-    Name = "vimbiso-s3-endpoint-${var.environment}"
-  })
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.logs"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
 }
 
 resource "aws_vpc_endpoint" "logs" {
@@ -272,17 +269,77 @@ resource "aws_vpc_endpoint" "logs" {
   })
 }
 
-# Docker Hub VPC endpoint for pulling public images
-resource "aws_vpc_endpoint" "dockerhub" {
+# ECS VPC endpoints
+resource "aws_vpc_endpoint" "ecs" {
   vpc_id             = aws_vpc.main.id
-  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecs"  # ECS endpoint includes Docker Hub access
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecs"
   vpc_endpoint_type  = "Interface"
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
-
   private_dns_enabled = true
   tags = merge(var.tags, {
-    Name = "vimbiso-dockerhub-endpoint-${var.environment}"
+    Name = "vimbiso-ecs-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "ecs_agent" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecs-agent"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ecs-agent-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "ecs_telemetry" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ecs-telemetry"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ecs-telemetry-endpoint-${var.environment}"
+  })
+}
+
+# SSM endpoints for ECS Exec and Parameter Store
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ssm"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ssm-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-ssmmessages-endpoint-${var.environment}"
+  })
+}
+
+resource "aws_vpc_endpoint" "kms" {
+  vpc_id             = aws_vpc.main.id
+  service_name       = "com.amazonaws.${data.aws_region.current.name}.kms"
+  vpc_endpoint_type  = "Interface"
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+  tags = merge(var.tags, {
+    Name = "vimbiso-kms-endpoint-${var.environment}"
   })
 }
 
