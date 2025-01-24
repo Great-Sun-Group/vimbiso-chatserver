@@ -85,7 +85,7 @@ jobs:
           TF_VAR_docker_image: ${{ env.IMAGE }}
         run: |
           cd terraform
-          terraform plan -input=false -lock-timeout=20m -target=module.ecs -out=plan.tfplan
+          terraform plan -input=false -lock-timeout=20m -target=module.app -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
       - name: Wait for Deployment
