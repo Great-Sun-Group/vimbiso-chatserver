@@ -274,14 +274,25 @@ jobs:
                 echo "  Redis Component: $REDIS_COMPONENT_HEALTH"
               fi
 
-              # Check for success - app container must be HEALTHY and app component must be healthy
+              # Check for success - all components must be healthy
               if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ] \
-                 && [ "$APP_HEALTH" = "HEALTHY" ] && [ "$APP_COMPONENT_HEALTH" = "healthy" ]; then
+                 && [ "$APP_HEALTH" = "HEALTHY" ] && [ "$APP_COMPONENT_HEALTH" = "healthy" ] \
+                 && [ "$REDIS_COMPONENT_HEALTH" = "healthy" ]; then
                 if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-                  echo "Deployment completed successfully - All containers healthy"
+                  echo "Deployment completed successfully - All components healthy"
                   DEPLOYMENT_DONE=true
                   break
                 fi
+              fi
+
+              # If Redis is unhealthy after grace period, fail deployment
+              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ] && [ "$REDIS_COMPONENT_HEALTH" != "healthy" ]; then
+                echo "Deployment failed - Redis component unhealthy after grace period"
+                TASK_ID=$(echo "$RUNNING_TASKS" | awk -F'/' '{print $NF}')
+                START_TIME=$(($(date +%s) - 300))
+                get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+                get_container_logs "$TASK_ID" "app" "$START_TIME"
+                exit 1
               fi
 
               # If containers are running but not healthy after grace period, show logs
