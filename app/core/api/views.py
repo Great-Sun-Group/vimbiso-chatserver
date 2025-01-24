@@ -2,7 +2,6 @@
 import logging
 import sys
 import time
-import socket
 from core.messaging.service import MessagingService
 from core.messaging.types import Message as DomainMessage
 from core.messaging.types import MessageRecipient, TemplateContent
@@ -17,8 +16,6 @@ from services.whatsapp.flow_processor import WhatsAppFlowProcessor
 from services.whatsapp.service import WhatsAppMessagingService
 from services.whatsapp.state_manager import \
     StateManager as WhatsAppStateManager
-from django.conf import settings
-import redis
 
 # Configure logging with a standardized format
 logging.basicConfig(
@@ -37,107 +34,46 @@ class HealthCheck(APIView):
     throttle_classes = []
 
     @staticmethod
-    def get_redis_info():
-        """Get detailed Redis connection info"""
-        redis_url = settings.CACHES['default']['LOCATION']
-        host = redis_url.split('//')[1].split(':')[0]
-        port = int(redis_url.split(':')[-1].split('/')[0])
-
-        info = {
-            "url": redis_url,
-            "host": host,
-            "port": port,
-            "dns": None,
-            "socket": None,
-            "ping": None,
-            "error": None
-        }
-
-        try:
-            # DNS lookup
-            info["dns"] = socket.gethostbyname(host)
-        except Exception as e:
-            info["error"] = f"DNS lookup failed: {str(e)}"
-            return info
-
-        try:
-            # Socket connection test
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex((info["dns"], port))
-            sock.close()
-            info["socket"] = "Connected" if result == 0 else f"Failed (error: {result})"
-        except Exception as e:
-            info["error"] = f"Socket connection failed: {str(e)}"
-            return info
-
-        try:
-            # Redis ping test
-            r = redis.Redis(host=host, port=port, socket_timeout=1)
-            info["ping"] = r.ping()
-        except Exception as e:
-            info["error"] = f"Redis ping failed: {str(e)}"
-
-        return info
-
-    @staticmethod
     def get(request):
         max_retries = 3
         retry_delay = 1  # seconds
         health_check_key = 'health_check'
         health_check_ttl = 5  # seconds
 
-        health_data = {
-            "status": "unhealthy",
-            "redis": {
-                "status": "disconnected",
-                "attempts": [],
-                "info": None
-            }
-        }
-
         for attempt in range(max_retries):
             try:
-                # Get Redis diagnostics
-                redis_info = HealthCheck.get_redis_info()
-                health_data["redis"]["info"] = redis_info
-
-                attempt_data = {
-                    "attempt": attempt + 1,
-                    "timestamp": time.time(),
-                }
-
                 # Try to set a value in Redis
                 cache.set(health_check_key, 'ok', health_check_ttl)
-                time.sleep(0.1)  # Wait for propagation
+
+                # Wait a moment to ensure value propagates
+                time.sleep(0.1)
+
+                # Try to get the value back
                 result = cache.get(health_check_key)
 
                 if result == 'ok':
-                    health_data["status"] = "healthy"
-                    health_data["redis"]["status"] = "connected"
-                    attempt_data["success"] = True
-                    health_data["redis"]["attempts"].append(attempt_data)
-                    return JsonResponse(health_data, status=status.HTTP_200_OK)
+                    # Successful health check
+                    return JsonResponse({
+                        "status": "healthy",
+                        "redis": "connected",
+                        "attempt": attempt + 1
+                    }, status=status.HTTP_200_OK)
 
-                attempt_data["success"] = False
-                attempt_data["error"] = "Value mismatch"
-                health_data["redis"]["attempts"].append(attempt_data)
                 logger.warning(f"Health check value mismatch on attempt {attempt + 1}")
 
             except Exception as e:
-                attempt_data = {
-                    "attempt": attempt + 1,
-                    "timestamp": time.time(),
-                    "success": False,
-                    "error": str(e)
-                }
-                health_data["redis"]["attempts"].append(attempt_data)
                 logger.error(f"Health check attempt {attempt + 1} failed: {str(e)}")
 
+            # Don't sleep on the last attempt
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
 
-        return JsonResponse(health_data, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        # All retries failed
+        return JsonResponse({
+            "status": "unhealthy",
+            "redis": "disconnected",
+            "error": "Failed to verify Redis connectivity after multiple attempts"
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 def get_messaging_service(state_manager, channel_type: str):

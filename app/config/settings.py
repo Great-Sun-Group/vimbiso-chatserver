@@ -73,21 +73,15 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SOCKET_CONNECT_TIMEOUT": 30,  # Increased for startup
-            "SOCKET_TIMEOUT": 30,  # Increased for startup
+            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
+            "SOCKET_TIMEOUT": 5,  # seconds
             "RETRY_ON_TIMEOUT": True,
-            "MAX_CONNECTIONS": 20,  # Increased for better concurrency
-            "RETRY_ATTEMPTS": 3,  # Add retry attempts
-            "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",  # More reliable during startup
-            "CONNECTION_POOL_CLASS_KWARGS": {
-                "max_connections": 20,
-                "timeout": 20,
-                "queue_class": "redis.queue.LifoQueue"  # Prefer newer connections
-            },
+            "MAX_CONNECTIONS": 10,
+            "HEALTH_CHECK_INTERVAL": 30,  # seconds
+            "CONNECTION_POOL_CLASS": "redis.ConnectionPool",
+            # Removed PARSER_CLASS since it's causing issues with newer Redis versions
             "REDIS_CLIENT_KWARGS": {
-                "decode_responses": True,
-                "socket_keepalive": True,  # Keep connections alive
-                "health_check_interval": 15  # More frequent health checks
+                "decode_responses": True  # Match existing client configuration
             }
         },
         "KEY_PREFIX": "vimbiso",  # Namespace cache keys
@@ -102,7 +96,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
-# Enhanced logging configuration
+# Logging configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -128,17 +122,6 @@ LOGGING = {
         "core": {
             "handlers": ["console"],
             "level": env("APP_LOG_LEVEL", default="DEBUG"),
-            "propagate": False,
-        },
-        # Add Redis logging
-        "django_redis": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
-        "redis": {
-            "handlers": ["console"],
-            "level": "DEBUG",
             "propagate": False,
         },
         # Django framework logging

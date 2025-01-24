@@ -73,8 +73,14 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       command = [
-        "sh", "-c",
-        "redis-server --protected-mode no --bind 0.0.0.0 --maxmemory 256mb --maxmemory-policy allkeys-lru --save \"\" --appendonly no --maxclients 10000 --loglevel debug --logfile /dev/stdout"
+        "redis-server",
+        "--protected-mode", "no",
+        "--bind", "0.0.0.0",
+        "--maxmemory", "256mb",
+        "--maxmemory-policy", "allkeys-lru",
+        "--save", "",
+        "--appendonly", "no",
+        "--maxclients", "10000"
       ]
       ulimits = [
         {
@@ -96,8 +102,6 @@ resource "aws_ecs_task_definition" "app" {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "redis"
-          "mode"                  = "non-blocking"
-          "max-buffer-size"       = "1m"
         }
       }
     },
@@ -116,9 +120,7 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://redis-state:6379/0" },
-        { name = "LOG_LEVEL", value = "debug" },
-        { name = "PYTHONUNBUFFERED", value = "1" }
+        { name = "REDIS_URL", value = "redis://redis-state:6379/0" }
       ]
       portMappings = [
         {
@@ -140,8 +142,6 @@ resource "aws_ecs_task_definition" "app" {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = "app"
-          "mode"                  = "non-blocking"
-          "max-buffer-size"       = "1m"
         }
       }
       dependsOn = [
@@ -170,9 +170,8 @@ resource "aws_ecs_service" "app" {
   platform_version                  = "LATEST"
   health_check_grace_period_seconds = 120  # Increased to allow containers to start
   enable_execute_command           = true  # Useful for debugging
-  # Reduce minimum healthy percent to allow all tasks to be replaced
-  deployment_minimum_healthy_percent = 0    # Allow all tasks to be replaced
-  deployment_maximum_percent        = 100  # Don't start more than needed
+  deployment_minimum_healthy_percent = 100  # Ensure no service interruption
+  deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -186,10 +185,9 @@ resource "aws_ecs_service" "app" {
     container_port   = 8000
   }
 
-  # Temporarily disable auto rollback to see failure details
   deployment_circuit_breaker {
     enable   = true
-    rollback = false
+    rollback = true
   }
 
   deployment_controller {

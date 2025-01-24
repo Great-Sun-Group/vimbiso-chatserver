@@ -28,24 +28,11 @@ while true; do
 
     echo "Attempting Redis connection (attempt $attempt/$max_attempts waiting ${wait_time}s)..."
 
-    echo "Attempt $attempt: Testing Redis connection..."
-    PING_RESULT=$(redis-cli -h "$REDIS_HOST" ping 2>&1)
-    PING_EXIT=$?
-
-    if [ $PING_EXIT -eq 0 ] && [ "$PING_RESULT" = "PONG" ]; then
+    if redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
         echo "Redis connection successful!"
-        echo "Redis info:"
-        redis-cli -h "$REDIS_HOST" info server
-        redis-cli -h "$REDIS_HOST" info clients
         break
     else
-        echo "Redis connection failed (exit code: $PING_EXIT)"
-        echo "Redis response: $PING_RESULT"
-        echo "Network status:"
-        netstat -an | grep 6379 || true
-        echo "DNS lookup:"
-        nslookup "$REDIS_HOST" || true
-        echo "Retrying in ${wait_time}s..."
+        echo "Redis connection failed. Retrying in ${wait_time}s..."
         sleep $wait_time
         attempt=$((attempt + 1))
     fi
@@ -53,11 +40,9 @@ done
 
 echo "Redis is ready!"
 
-# Create and set up directories
-echo "Setting up directories..."
+# Create required directories
 mkdir -p /app/data/{static,media,logs}
 chmod -R 755 /app/data
-ls -la /app/data
 
 # In production collect static files
 if [ "${DJANGO_ENV:-development}" = "production" ]; then
@@ -75,11 +60,6 @@ if [ "${DJANGO_ENV:-development}" = "production" ]; then
     echo "Workers: ${GUNICORN_WORKERS:-2}"
 
     # Using sync worker with preload for better memory efficiency
-    echo "Starting Gunicorn with configuration:"
-    echo "- Workers: ${GUNICORN_WORKERS:-2}"
-    echo "- Timeout: ${GUNICORN_TIMEOUT:-120}"
-    echo "- Log level: ${LOG_LEVEL:-info}"
-
     exec gunicorn config.wsgi:application \
         --bind 0.0.0.0:${PORT:-8000} \
         --workers ${GUNICORN_WORKERS:-2} \

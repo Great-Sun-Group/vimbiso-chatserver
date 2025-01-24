@@ -77,25 +77,9 @@ jobs:
         env:
           TF_VAR_docker_image: ${{ env.IMAGE }}
         run: |
-          # Ensure log group exists before deployment
-          aws logs create-log-group --log-group-name "/ecs/vimbiso-$ENVIRONMENT" || true
-          aws logs put-retention-policy --log-group-name "/ecs/vimbiso-$ENVIRONMENT" --retention-in-days 30
-
           cd terraform
           terraform plan -input=false -lock-timeout=20m -target=module.ecs -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
-
-          # Wait a moment for changes to propagate
-          sleep 10
-
-          # List existing tasks to clean state
-          echo "Current tasks before new deployment:"
-          aws ecs list-tasks \
-            --cluster "vimbiso-cluster-$ENVIRONMENT" \
-            --service-name "vimbiso-service-$ENVIRONMENT" \
-            --desired-status STOPPED \
-            --query 'taskArns[]' \
-            --output table || true
 
       - name: Wait for Deployment
         run: |
@@ -116,29 +100,13 @@ jobs:
             echo "Start Time: $(date -d @${START_TIME})"
             echo "===================="
 
-            # Ensure log group exists
-            aws logs describe-log-groups --log-group-name-prefix "/ecs/vimbiso-$ENVIRONMENT" || \
-              aws logs create-log-group --log-group-name "/ecs/vimbiso-$ENVIRONMENT"
-
-            # Get logs with correct stream pattern
             aws logs get-log-events \
               --log-group-name "/ecs/vimbiso-$ENVIRONMENT" \
-              --log-stream-name "ecs/${CONTAINER_NAME}/${TASK_ID}" \
+              --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
               --start-time ${START_TIME}000 \
               --limit 200 \
               --query 'events[].message' \
-              --output text || \
-              echo "No logs found for ${CONTAINER_NAME} (Task: ${TASK_ID})"
-
-            # Also try alternative stream pattern
-            aws logs get-log-events \
-              --log-group-name "/ecs/vimbiso-$ENVIRONMENT" \
-              --log-stream-name "${CONTAINER_NAME}/${TASK_ID}" \
-              --start-time ${START_TIME}000 \
-              --limit 200 \
-              --query 'events[].message' \
-              --output text || \
-              echo "No logs found with alternative pattern for ${CONTAINER_NAME} (Task: ${TASK_ID})"
+              --output text || true
           }
 
           while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
@@ -175,25 +143,8 @@ jobs:
               aws ecs describe-tasks \
                 --cluster "vimbiso-cluster-$ENVIRONMENT" \
                 --tasks $RUNNING_TASKS \
-                --query 'tasks[].{taskArn: taskArn, lastStatus: lastStatus, desiredStatus: desiredStatus, stoppedReason: stoppedReason, containers: containers[].{name: name, lastStatus: lastStatus, exitCode: exitCode, reason: reason, health: healthStatus}}' \
-                --output json | jq '.'
-            fi
-
-            # Also check stopped tasks for failure reasons
-            STOPPED_TASKS=$(aws ecs list-tasks \
-              --cluster "vimbiso-cluster-$ENVIRONMENT" \
-              --service-name "vimbiso-service-$ENVIRONMENT" \
-              --desired-status STOPPED \
-              --query 'taskArns[]' \
-              --output text)
-
-            if [ ! -z "$STOPPED_TASKS" ]; then
-              echo "Checking stopped tasks for failure reasons..."
-              aws ecs describe-tasks \
-                --cluster "vimbiso-cluster-$ENVIRONMENT" \
-                --tasks $STOPPED_TASKS \
-                --query 'tasks[].{taskArn: taskArn, stoppedReason: stoppedReason, containers: containers[].{name: name, exitCode: exitCode, reason: reason}}' \
-                --output json | jq '.'
+                --query 'tasks[].containers[].{name: name, health: healthStatus}' \
+                --output table
             fi
 
             # Check for failures
@@ -207,19 +158,6 @@ jobs:
                 --output text)
 
               if [ ! -z "$FAILED_TASKS" ]; then
-                # Ensure log group exists before fetching logs
-                aws logs describe-log-groups --log-group-name-prefix "/ecs/vimbiso-$ENVIRONMENT" || \
-                  aws logs create-log-group --log-group-name "/ecs/vimbiso-$ENVIRONMENT"
-
-                # List all log streams to help debug
-                echo "Available log streams:"
-                aws logs describe-log-streams \
-                  --log-group-name "/ecs/vimbiso-$ENVIRONMENT" \
-                  --log-stream-name-prefix "ecs/" \
-                  --query 'logStreams[*].logStreamName' \
-                  --output table || true
-
-                # Get logs for failed tasks
                 echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
                   TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
                   START_TIME=$(($(date +%s) - 300))
