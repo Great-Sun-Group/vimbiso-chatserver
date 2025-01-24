@@ -175,7 +175,7 @@ resource "aws_ecs_service" "app" {
 resource "aws_appautoscaling_target" "app" {
   max_capacity       = var.max_capacity
   min_capacity       = var.min_capacity
-  resource_id        = "service/${data.aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${data.aws_ecs_cluster.main.cluster_name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
@@ -230,7 +230,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_actions      = [aws_appautoscaling_policy.cpu.arn]
 
   dimensions = {
-    ClusterName = data.aws_ecs_cluster.main.name
+    ClusterName = data.aws_ecs_cluster.main.cluster_name
     ServiceName = aws_ecs_service.app.name
   }
 }
@@ -248,7 +248,7 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
   alarm_actions      = [aws_appautoscaling_policy.memory.arn]
 
   dimensions = {
-    ClusterName = data.aws_ecs_cluster.main.name
+    ClusterName = data.aws_ecs_cluster.main.cluster_name
     ServiceName = aws_ecs_service.app.name
   }
 }
