@@ -168,13 +168,21 @@ jobs:
                 echo "Getting task failure reasons..."
                 echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
                   echo "Task ARN: $TASK_ARN"
+                  # Get task details including stopped reason and last status
                   aws ecs describe-tasks \
                     --cluster "vimbiso-cluster-$ENVIRONMENT" \
                     --tasks "$TASK_ARN" \
-                    --query 'tasks[].{reason: stoppedReason, containers: containers[].{name: name, reason: reason}}' \
+                    --query 'tasks[].{stoppedReason: stoppedReason, lastStatus: lastStatus, containers: containers[].{name: name, reason: reason, lastStatus: lastStatus, exitCode: exitCode}}' \
                     --output json | jq '.'
 
-                  # Still try to get logs if available
+                  # Get task details from ECS Events for more context
+                  aws ecs describe-services \
+                    --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                    --services "vimbiso-service-$ENVIRONMENT" \
+                    --query 'services[].events[?contains(message, `'"$TASK_ARN"'`)]' \
+                    --output json | jq '.'
+
+                  # Try to get logs even if task failed early
                   TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
                   START_TIME=$(($(date +%s) - 300))
                   get_container_logs "$TASK_ID" "redis-state" "$START_TIME"

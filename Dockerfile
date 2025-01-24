@@ -67,7 +67,7 @@ COPY requirements /app/requirements
 RUN pip install --no-cache-dir -r requirements/prod.txt
 
 # Remove build dependencies but keep runtime dependencies
-RUN apt-mark manual redis-tools curl gosu dnsutils netcat-traditional && \
+RUN apt-mark manual redis-tools curl && \
     apt-get purge -y build-essential && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
