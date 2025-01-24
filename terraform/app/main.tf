@@ -23,13 +23,11 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([
     {
-      name             = "redis-state"
-      image            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
-      essential        = true
-      memory           = 384
-      cpu              = 256
-      dnsSearchDomains = ["local"]
-      dnsServers       = ["169.254.169.253"]  # AWS VPC DNS
+      name      = "redis-state"
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
+      essential = true
+      memory    = 384
+      cpu       = 256
       portMappings = [
         {
           containerPort = 6379
@@ -53,7 +51,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping || (echo 'Local Redis: ' && redis-cli -h localhost ping && echo 'External Redis: ' && redis-cli -h 0.0.0.0 ping && exit 1)"]
+        command     = ["CMD-SHELL", "echo '=== Network Info ===' && ip addr show && echo '=== Redis Status ===' && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping || (echo '=== Failed Redis Status ===' && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping && exit 1)"]
         interval    = 30            # More forgiving health check interval
         timeout     = 10           # Increased timeout
         retries     = 5            # More retries before failing

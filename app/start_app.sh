@@ -10,6 +10,18 @@ echo "REDIS_URL from environment: ${REDIS_URL:-not set}"
 REDIS_HOST=$(echo "${REDIS_URL:-redis://localhost:6379/0}" | sed -E 's|redis://([^:/]+).*|\1|')
 echo "Extracted Redis host: $REDIS_HOST"
 
+# Try to get Redis container's IP
+echo "Attempting to get Redis container IP..."
+if getent hosts redis-state >/dev/null 2>&1; then
+    REDIS_IP=$(getent hosts redis-state | awk '{ print $1 }')
+    echo "Found Redis IP: $REDIS_IP"
+    export REDIS_URL="redis://$REDIS_IP:6379/0"
+    echo "Updated REDIS_URL to: $REDIS_URL"
+    REDIS_HOST="$REDIS_IP"
+else
+    echo "Could not resolve Redis IP, using original host: $REDIS_HOST"
+fi
+
 # Test Redis connectivity in background
 (
     echo "Starting Redis connection attempts in background..."
