@@ -1,13 +1,6 @@
 name: Deploy Application
 
 on:
-  push:
-    branches:
-      - prod
-      - dev
-    paths-ignore:
-      - 'terraform/**'
-      - '.github/workflows/terraform-*.yml'
   workflow_dispatch:
 
 jobs:

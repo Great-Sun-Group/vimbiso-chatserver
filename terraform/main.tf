@@ -27,7 +27,7 @@ locals {
 
   common_tags = {
     Environment = var.environment
-    Project     = "vimbiso-pay"
+    Project     = "vimbiso-chatserver"
     ManagedBy   = "terraform"
   }
 }

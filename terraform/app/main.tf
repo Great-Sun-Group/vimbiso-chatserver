@@ -1,6 +1,47 @@
+# ECR Repository
+resource "aws_ecr_repository" "app" {
+  name = "vimbiso-chatserver-${var.environment}"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+
+  # Prevent accidental deletion of the repository
+  lifecycle {
+    prevent_destroy = true
+  }
+
+}
+
+# ECR Lifecycle Policy
+resource "aws_ecr_lifecycle_policy" "app" {
+  repository = aws_ecr_repository.app.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 30 untagged images"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "imageCountMoreThan"
+          countNumber = 30
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
-  name = "vimbiso-pay-cluster-${var.environment}"
+  name = "vimbiso-chatserver-cluster-${var.environment}"
 
   setting {
     name  = "containerInsights"
@@ -10,7 +51,7 @@ resource "aws_ecs_cluster" "main" {
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
-  family                   = "vimbiso-pay-${var.environment}"
+  family                   = "vimbiso-chatserver-${var.environment}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
@@ -105,13 +146,13 @@ resource "aws_ecs_task_definition" "app" {
 
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/vimbiso-pay-${var.environment}"
+  name              = "/ecs/vimbiso-chatserver-${var.environment}"
   retention_in_days = 30
 }
 
 # ECS Service
 resource "aws_ecs_service" "app" {
-  name                               = "vimbiso-pay-service-${var.environment}"
+  name                               = "vimbiso-chatserver-service-${var.environment}"
   cluster                           = aws_ecs_cluster.main.id
   task_definition                   = aws_ecs_task_definition.app.arn
   desired_count                     = var.min_capacity
@@ -160,7 +201,7 @@ resource "aws_appautoscaling_target" "app" {
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
-  name               = "vimbiso-pay-cpu-autoscaling-${var.environment}"
+  name               = "vimbiso-chatserver-cpu-autoscaling-${var.environment}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
@@ -178,7 +219,7 @@ resource "aws_appautoscaling_policy" "cpu" {
 }
 
 resource "aws_appautoscaling_policy" "memory" {
-  name               = "vimbiso-pay-memory-autoscaling-${var.environment}"
+  name               = "vimbiso-chatserver-memory-autoscaling-${var.environment}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
@@ -197,7 +238,7 @@ resource "aws_appautoscaling_policy" "memory" {
 
 # CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
-  alarm_name          = "vimbiso-pay-cpu-high-${var.environment}"
+  alarm_name          = "vimbiso-chatserver-cpu-high-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
   metric_name         = "CPUUtilization"
@@ -215,7 +256,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "memory_high" {
-  alarm_name          = "vimbiso-pay-memory-high-${var.environment}"
+  alarm_name          = "vimbiso-chatserver-memory-high-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
   metric_name         = "MemoryUtilization"
