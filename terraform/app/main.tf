@@ -92,7 +92,7 @@ resource "aws_ecs_task_definition" "app" {
   container_definitions = jsonencode([
     {
       name      = "redis-state"
-      image     = "${aws_ecr_repository.redis.repository_url}:7.0-alpine"
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
       essential = true
       memory    = 384
       cpu       = 256
@@ -321,5 +321,6 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
   }
 }
 
-# Get current region
+# Get current region and account ID
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
