@@ -58,6 +58,10 @@ resource "aws_ecs_task_definition" "app" {
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn           = aws_iam_role.ecs_task.arn
 
+  ephemeral_storage {
+    size_in_gib = 21  # Minimum size for Fargate
+  }
+
   container_definitions = jsonencode([
     {
       name      = "redis-state"
@@ -72,16 +76,7 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
-      command = [
-        "redis-server",
-        "--protected-mode", "no",
-        "--bind", "0.0.0.0",
-        "--maxmemory", "512mb",
-        "--maxmemory-policy", "allkeys-lru",
-        "--appendonly", "yes",
-        "--appendfsync", "everysec",
-        "--save", ""
-      ]
+      command = ["/app/redis-entrypoint.sh"]
       ulimits = [
         {
           name = "nofile",
@@ -96,6 +91,13 @@ resource "aws_ecs_task_definition" "app" {
         retries     = 2
         start_period = 30
       }
+      mountPoints = [
+        {
+          sourceVolume  = "data"
+          containerPath = "/app/data"
+          readOnly     = false
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -148,6 +150,13 @@ resource "aws_ecs_task_definition" "app" {
         retries     = 2
         startPeriod = 120  # Increased to allow for Redis dependency
       }
+      mountPoints = [
+        {
+          sourceVolume  = "data"
+          containerPath = "/app/data"
+          readOnly     = false
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -158,6 +167,10 @@ resource "aws_ecs_task_definition" "app" {
       }
     }
   ])
+
+  volume {
+    name = "data"
+  }
 }
 
 # CloudWatch Log Group

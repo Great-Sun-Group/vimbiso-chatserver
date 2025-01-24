@@ -40,9 +40,10 @@ done
 
 echo "Redis is ready!"
 
-# Create required directories
+# Create required directories with proper permissions
 mkdir -p /app/data/{static,media,logs}
 chmod -R 755 /app/data
+chown -R appuser:appuser /app/data/{static,media,logs}
 
 # In production collect static files
 if [ "${DJANGO_ENV:-development}" = "production" ]; then

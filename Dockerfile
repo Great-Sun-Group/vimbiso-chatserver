@@ -78,8 +78,9 @@ RUN apt-mark manual redis-tools curl gosu dnsutils netcat-traditional && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy application code
+# Copy application code and scripts
 COPY ./app /app
+COPY app/redis-entrypoint.sh /app/redis-entrypoint.sh
 
 # Create required directories with proper permissions
 RUN mkdir -p \
@@ -89,7 +90,7 @@ RUN mkdir -p \
     /app/data/media \
     && chown -R appuser:appuser /app \
     && chmod -R 755 /app/data \
-    && chmod +x /app/start_app.sh \
+    && chmod +x /app/start_app.sh /app/redis-entrypoint.sh \
     && find /app/data -type d -exec chmod 755 {} \; \
     && find /app/data -type f -exec chmod 644 {} \;
 
