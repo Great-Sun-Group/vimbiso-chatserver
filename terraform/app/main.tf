@@ -36,7 +36,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       command = [
-        "--protected-mode", "yes",  # Enable protected mode for security
+        "--protected-mode", "no",   # Disable protected mode since we're in a private VPC
         "--bind", "0.0.0.0",
         "--maxmemory", "512mb",     # Increased memory for better performance
         "--maxmemory-policy", "allkeys-lru",
