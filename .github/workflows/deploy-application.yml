@@ -97,7 +97,11 @@ jobs:
           TF_VAR_docker_image: ${{ env.IMAGE }}
         run: |
           cd terraform
-          terraform plan -input=false -lock-timeout=20m -target=module.app -out=plan.tfplan
+          # Only target the specific resources we want to update
+          terraform plan -input=false -lock-timeout=20m \
+            -target=module.app.aws_ecs_task_definition.app \
+            -target=module.app.aws_ecs_service.app \
+            -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
       - name: Wait for Deployment
