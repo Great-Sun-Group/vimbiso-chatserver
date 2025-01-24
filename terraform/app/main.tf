@@ -35,13 +35,9 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
+      entrypoint = ["/bin/sh", "-c"]
       command = [
-        "--protected-mode", "no",   # Disable protected mode since we're in a private VPC
-        "--bind", "0.0.0.0",
-        "--maxmemory", "512mb",     # Increased memory for better performance
-        "--maxmemory-policy", "allkeys-lru",
-        "--save", "",               # Explicitly disable persistence
-        "--appendonly", "no"        # No AOF persistence needed
+        "apk add --no-cache netcat-openbsd && redis-server --protected-mode no --bind 0.0.0.0 --maxmemory 512mb --maxmemory-policy allkeys-lru --save \"\" --appendonly no --tcp-backlog 511 --tcp-keepalive 300"
       ]
       ulimits = [
         {
@@ -51,11 +47,11 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "echo '=== Network Info ===' && ip addr show && echo '=== Redis Status ===' && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping || (echo '=== Failed Redis Status ===' && redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping && exit 1)"]
-        interval    = 30            # More forgiving health check interval
-        timeout     = 10           # Increased timeout
-        retries     = 5            # More retries before failing
-        startPeriod = 60           # Longer startup grace period
+        command     = ["CMD-SHELL", "redis-cli -h localhost ping && redis-cli -h 0.0.0.0 ping && nc -zv localhost 6379 && nc -zv 0.0.0.0 6379"]
+        interval    = 10
+        timeout     = 5
+        retries     = 3
+        startPeriod = 30
       }
       logConfiguration = {
         logDriver = "awslogs"
