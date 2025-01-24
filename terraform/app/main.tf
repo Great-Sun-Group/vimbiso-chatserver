@@ -170,8 +170,9 @@ resource "aws_ecs_service" "app" {
   platform_version                  = "LATEST"
   health_check_grace_period_seconds = 120  # Increased to allow containers to start
   enable_execute_command           = true  # Useful for debugging
-  deployment_minimum_healthy_percent = 100  # Ensure no service interruption
-  deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
+  # Reduce minimum healthy percent to allow all tasks to be replaced
+  deployment_minimum_healthy_percent = 0    # Allow all tasks to be replaced
+  deployment_maximum_percent        = 100  # Don't start more than needed
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -185,9 +186,10 @@ resource "aws_ecs_service" "app" {
     container_port   = 8000
   }
 
+  # Temporarily disable auto rollback to see failure details
   deployment_circuit_breaker {
     enable   = true
-    rollback = true
+    rollback = false
   }
 
   deployment_controller {
