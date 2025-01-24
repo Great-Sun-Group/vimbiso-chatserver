@@ -8,6 +8,8 @@ from core.messaging.types import MessageRecipient, TemplateContent
 from core.state.manager import StateManager
 from decouple import config
 from django.core.cache import cache
+from core.state.persistence.client import get_redis_client
+from core.state.persistence.redis_operations import RedisAtomic
 from django.http import HttpResponse, JsonResponse
 from rest_framework import status
 from rest_framework.parsers import JSONParser
@@ -35,31 +37,40 @@ class HealthCheck(APIView):
 
     @staticmethod
     def get(request):
-        # Check Redis health status from file
-        redis_healthy = False
-        try:
-            with open('/tmp/redis_health', 'r') as f:
-                redis_healthy = f.read().strip() == "REDIS_HEALTHY=true"
-        except Exception as e:
-            logger.error(f"Failed to read Redis health status: {str(e)}")
+        # Initialize Redis status
+        redis_status = "unhealthy"
 
-        # Verify app can still use Redis
-        redis_status = "unknown"
-        if redis_healthy:
-            try:
-                cache.set('health_check', 'ok')
-                test_value = cache.get('health_check')
-                if test_value == 'ok':
+        try:
+            # Get Redis client the same way the application does
+            redis_client = get_redis_client()
+            redis_atomic = RedisAtomic(redis_client)
+
+            # Test Redis connectivity using the same atomic operations the app uses
+            success, _, error = redis_atomic.execute_atomic(
+                key="health_check",
+                operation="set",
+                value={"status": "ok"},
+                ttl=30,  # 30 second TTL for health check
+                max_retries=3  # Will retry 3 times with built-in handling
+            )
+
+            if success:
+                # Verify we can read the value back
+                success, result, error = redis_atomic.execute_atomic(
+                    key="health_check",
+                    operation="get"
+                )
+
+                if success and result and result.get("status") == "ok":
                     redis_status = "healthy"
+                    logger.info("Redis connection test successful using atomic operations")
                 else:
-                    redis_status = "unhealthy"
-                    logger.error("Redis test value mismatch")
-            except Exception as e:
-                redis_status = "unhealthy"
-                logger.error(f"Redis operation failed: {str(e)}")
-        else:
-            redis_status = "unhealthy"
-            logger.error("Redis marked as unhealthy by startup script")
+                    logger.warning(f"Redis read verification failed: {error or 'value mismatch'}")
+            else:
+                logger.warning(f"Redis write operation failed: {error}")
+
+        except Exception as e:
+            logger.error(f"Redis client initialization failed: {str(e)}")
 
         try:
             # Ensure proper JSON structure
