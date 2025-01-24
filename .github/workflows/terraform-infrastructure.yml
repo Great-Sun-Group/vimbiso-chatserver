@@ -6,7 +6,7 @@ on:
       initial_deploy:
         description: 'Initial deployment (skips HTTPS setup until DNS is configured)'
         type: boolean
-        default: true
+        default: false
         required: true
 
 jobs:
