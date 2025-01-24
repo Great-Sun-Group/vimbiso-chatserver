@@ -94,13 +94,12 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       command = [
-        "redis-server",
         "--protected-mode", "no",
         "--bind", "0.0.0.0",
-        "--maxmemory", "356mb",  # Leave some overhead for Redis process
+        "--maxmemory", "356mb",
         "--maxmemory-policy", "allkeys-lru",
-        "--save", "",  # Disable persistence
-        "--appendonly", "no"  # Disable AOF
+        "--save", "",
+        "--appendonly", "no"
       ]
       ulimits = [
         {
@@ -110,7 +109,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD", "redis-cli", "ping"]
+        command     = ["CMD-SHELL", "/usr/local/bin/redis-cli -h localhost ping"]
         interval    = 30
         timeout     = 5
         retries     = 3
@@ -159,7 +158,7 @@ resource "aws_ecs_task_definition" "app" {
       dependsOn = [
         {
           containerName = "redis-state"
-          condition     = "HEALTHY"
+          condition     = "START"
         }
       ]
       healthCheck = {
