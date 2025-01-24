@@ -92,7 +92,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
+        command     = ["CMD", "nc", "-z", "localhost", "6379"]
         interval    = 30
         timeout     = 5
         retries     = 2
@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+        command     = ["CMD-SHELL", "python -c 'import http.client; conn = http.client.HTTPConnection(\"localhost\", 8000); conn.request(\"GET\", \"/health/\"); resp = conn.getresponse(); exit(0 if resp.status == 200 else 1)'"]
         interval    = 60
         timeout     = 5
         retries     = 2
@@ -187,7 +187,7 @@ resource "aws_ecs_service" "app" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.ecs_security_group_id]
-    assign_public_ip = false
+    assign_public_ip = false  # Use NAT Gateway for internet access
   }
 
   load_balancer {
