@@ -64,6 +64,7 @@ module "app" {
   docker_image  = var.docker_image
 
   # Network configuration
+  vpc_id               = module.base.vpc_id
   private_subnet_ids    = module.base.private_subnet_ids
   ecs_security_group_id = module.base.ecs_security_group_id
   target_group_arn      = module.base.target_group_arn
