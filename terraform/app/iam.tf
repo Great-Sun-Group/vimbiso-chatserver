@@ -57,9 +57,7 @@ resource "aws_iam_role_policy" "ecs_execution_ecr" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage"
         ]
-        Resource = [
-          "arn:aws:ecr:af-south-1:${data.aws_caller_identity.current.account_id}:repository/*"
-        ]
+        Resource = "*"
       }
     ]
   })

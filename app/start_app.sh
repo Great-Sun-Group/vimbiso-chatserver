@@ -19,17 +19,8 @@ wait_time=5
 while true; do
     if [ $attempt -gt $max_attempts ]; then
         echo "Redis is still unavailable after $max_attempts attempts - giving up"
-        echo "Debug information:"
-        echo "1. Redis connection attempt:"
+        echo "Last Redis connection attempt:"
         redis-cli -h "$REDIS_HOST" ping || true
-        echo "2. Network status:"
-        netstat -an | grep 6379 || true
-        echo "3. DNS resolution:"
-        nslookup "$REDIS_HOST" || true
-        echo "4. Route to Redis:"
-        traceroute "$REDIS_HOST" || true
-        echo "5. Process status:"
-        ps aux | grep redis || true
         exit 1
     fi
 
@@ -38,7 +29,6 @@ while true; do
     # Try Redis connection with explicit timeout
     if timeout 5 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
         echo "Redis connection successful!"
-        redis-cli -h "$REDIS_HOST" info || true  # Print Redis info for debugging
         break
     else
         echo "Redis connection failed (attempt $attempt). Error code: $?"
