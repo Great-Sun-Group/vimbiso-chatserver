@@ -122,13 +122,6 @@ resource "aws_ecs_task_definition" "app" {
 
 }
 
-# Service Discovery Private DNS Namespace
-resource "aws_service_discovery_private_dns_namespace" "app" {
-  name        = "vimbiso-${var.environment}.local"
-  description = "Private DNS namespace for vimbiso services"
-  vpc         = var.vpc_id
-}
-
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/vimbiso-${var.environment}"
@@ -159,13 +152,6 @@ resource "aws_ecs_service" "app" {
     target_group_arn = var.target_group_arn
     container_name   = "app"
     container_port   = 8000
-  }
-
-  # Use service registries for Redis discovery
-  service_registries {
-    registry_arn = aws_service_discovery_service.redis.arn
-    container_name = "redis-state"
-    container_port = 6379
   }
 
   deployment_circuit_breaker {
