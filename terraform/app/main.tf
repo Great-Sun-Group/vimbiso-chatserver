@@ -28,8 +28,6 @@ resource "aws_ecs_task_definition" "app" {
       essential = true
       memory    = 384
       cpu       = 256
-      hostname  = "redis-state"  # Explicitly set hostname
-      links     = []  # Empty links array to ensure hostname resolution
       portMappings = [
         {
           containerPort = 6379
@@ -77,7 +75,6 @@ resource "aws_ecs_task_definition" "app" {
       cpu       = var.task_cpu - 256     # Remaining CPU after Redis
       command   = ["/app/start_app.sh"]
       user      = "appuser"  # Run as non-root user
-      links     = ["redis-state:redis-state"]  # Explicit container linking
       environment = [
         { name = "DJANGO_ENV", value = var.environment },
         { name = "DJANGO_SECRET", value = var.django_secret },
