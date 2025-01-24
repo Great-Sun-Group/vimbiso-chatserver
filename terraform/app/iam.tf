@@ -52,10 +52,26 @@ resource "aws_iam_role_policy" "ecs_execution_ecr" {
       {
         Effect = "Allow"
         Action = [
-          "ecr:GetAuthorizationToken",
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage"
+        ]
+        Resource = [
+          "${aws_ecr_repository.app.arn}"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr-public:GetAuthorizationToken",
+          "sts:GetServiceBearerToken"
         ]
         Resource = "*"
       }

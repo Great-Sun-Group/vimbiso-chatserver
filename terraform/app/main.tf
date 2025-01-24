@@ -76,7 +76,14 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
-      command = ["/app/redis-entrypoint.sh"]
+      command = [
+        "redis-server",
+        "--protected-mode", "no",
+        "--bind", "0.0.0.0",
+        "--maxmemory", "384mb",
+        "--maxmemory-policy", "allkeys-lru",
+        "--save", ""
+      ]
       ulimits = [
         {
           name = "nofile",
@@ -91,19 +98,13 @@ resource "aws_ecs_task_definition" "app" {
         retries     = 2
         start_period = 30
       }
-      mountPoints = [
-        {
-          sourceVolume  = "data"
-          containerPath = "/app/data"
-          readOnly     = false
-        }
-      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
-          "awslogs-stream-prefix" = "redis"
+          "awslogs-stream-prefix" = "redis",
+          "awslogs-create-group"  = "true"
         }
       }
     },
@@ -150,27 +151,18 @@ resource "aws_ecs_task_definition" "app" {
         retries     = 2
         startPeriod = 120  # Increased to allow for Redis dependency
       }
-      mountPoints = [
-        {
-          sourceVolume  = "data"
-          containerPath = "/app/data"
-          readOnly     = false
-        }
-      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
-          "awslogs-stream-prefix" = "app"
+          "awslogs-stream-prefix" = "app",
+          "awslogs-create-group"  = "true"
         }
       }
     }
   ])
 
-  volume {
-    name = "data"
-  }
 }
 
 # CloudWatch Log Group
