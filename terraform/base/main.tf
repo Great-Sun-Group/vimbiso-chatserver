@@ -139,11 +139,20 @@ resource "aws_security_group" "ecs" {
   description = "ECS Tasks Security Group"
   vpc_id      = aws_vpc.main.id
 
+  # Allow inbound from ALB
   ingress {
     protocol        = "tcp"
     from_port       = var.container_port
     to_port         = var.container_port
     security_groups = [aws_security_group.alb.id]
+  }
+
+  # Allow internal communication between containers in the same security group
+  ingress {
+    protocol  = "tcp"
+    from_port = 0
+    to_port   = 65535
+    self      = true
   }
 
   egress {

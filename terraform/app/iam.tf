@@ -16,6 +16,31 @@ resource "aws_iam_role" "ecs_execution" {
   })
 }
 
+# Allow execution role to create log streams and put logs
+resource "aws_iam_role_policy" "ecs_execution_logs" {
+  name = "vimbiso-execution-logs-${var.environment}"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "${aws_cloudwatch_log_group.app.arn}",
+          "${aws_cloudwatch_log_group.app.arn}:*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_execution" {
   role       = aws_iam_role.ecs_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
