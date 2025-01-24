@@ -54,8 +54,8 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "/usr/local/bin/redis-cli -h localhost ping"]
         interval    = 10
         timeout     = 5
-        retries     = 3
-        startPeriod = 15
+        retries     = 2
+        startPeriod = 20
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -107,8 +107,8 @@ resource "aws_ecs_task_definition" "app" {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
         interval    = 10
         timeout     = 5
-        retries     = 3
-        startPeriod = 30
+        retries     = 2
+        startPeriod = 20
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -138,7 +138,7 @@ resource "aws_ecs_service" "app" {
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 120  # 2 minutes should be enough for initial startup
+  health_check_grace_period_seconds = 180  # 3 minutes to match deployment workflow grace period
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime

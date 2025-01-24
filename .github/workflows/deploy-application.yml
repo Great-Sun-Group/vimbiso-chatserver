@@ -214,12 +214,37 @@ jobs:
               exit 1
             fi
 
-            # Check for success
-            if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ]; then
-              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-                echo "Deployment completed successfully"
-                DEPLOYMENT_DONE=true
-                break
+            # Check container health status
+            if [ ! -z "$RUNNING_TASKS" ]; then
+              HEALTH_STATUS=$(aws ecs describe-tasks \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --tasks $RUNNING_TASKS \
+                --query 'tasks[].containers[].{name: name, health: healthStatus}' \
+                --output json)
+
+              REDIS_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "redis-state") | .health')
+              APP_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "app") | .health')
+
+              # Check for success - both containers must be HEALTHY
+              if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ] \
+                 && [ "$REDIS_HEALTH" = "HEALTHY" ] && [ "$APP_HEALTH" = "HEALTHY" ]; then
+                if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+                  echo "Deployment completed successfully - All containers healthy"
+                  DEPLOYMENT_DONE=true
+                  break
+                fi
+              fi
+
+              # If containers are running but not healthy after grace period, show logs
+              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ] && [ "$RUNNING_COUNT" -gt 0 ] \
+                 && { [ "$REDIS_HEALTH" != "HEALTHY" ] || [ "$APP_HEALTH" != "HEALTHY" ]; }; then
+                echo "Containers running but not healthy after grace period. Fetching logs..."
+                TASK_ID=$(echo "$RUNNING_TASKS" | awk -F'/' '{print $NF}')
+                START_TIME=$(($(date +%s) - 300))
+                get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+                get_container_logs "$TASK_ID" "app" "$START_TIME"
+                echo "Deployment failed - containers not healthy after grace period"
+                exit 1
               fi
             fi
 
