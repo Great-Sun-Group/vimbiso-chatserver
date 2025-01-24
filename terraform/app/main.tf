@@ -123,26 +123,6 @@ resource "aws_service_discovery_private_dns_namespace" "app" {
   vpc         = var.vpc_id
 }
 
-# Service Discovery Service for Redis
-resource "aws_service_discovery_service" "redis" {
-  name = "redis-state"
-
-  dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.app.id
-
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
-
-    routing_policy = "MULTIVALUE"
-  }
-
-  health_check_custom_config {
-    failure_threshold = 1
-  }
-}
-
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/vimbiso-${var.environment}"
@@ -178,6 +158,7 @@ resource "aws_ecs_service" "app" {
   # Configure Service Connect for container-to-container communication
   service_connect_configuration {
     enabled = true
+    namespace = aws_service_discovery_private_dns_namespace.app.name
     log_configuration {
       log_driver = "awslogs"
       options = {
