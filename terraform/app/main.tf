@@ -76,12 +76,11 @@ resource "aws_ecs_task_definition" "app" {
         "redis-server",
         "--protected-mode", "no",
         "--bind", "0.0.0.0",
-        "--maxmemory", "384mb",
+        "--maxmemory", "512mb",
         "--maxmemory-policy", "allkeys-lru",
-        "--save", "",
-        "--appendonly", "no",
-        "--maxclients", "10000",
-        "--tcp-keepalive", "60"
+        "--appendonly", "yes",
+        "--appendfsync", "everysec",
+        "--save", ""
       ]
       ulimits = [
         {
@@ -91,11 +90,11 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
-        interval    = 30
-        timeout     = 10
+        command     = ["CMD", "redis-cli", "ping"]
+        interval    = 5
+        timeout     = 3
         retries     = 3
-        startPeriod = 60
+        start_period = 10
       }
       logConfiguration = {
         logDriver = "awslogs"
