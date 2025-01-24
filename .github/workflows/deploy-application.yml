@@ -99,11 +99,11 @@ jobs:
           cd terraform
           # Only target the specific resources we want to update
           terraform plan -input=false -lock-timeout=20m \
-            -target="module.app.data.aws_caller_identity.current" \
-            -target="module.app.data.aws_region.current" \
             -target="module.app.aws_ecs_task_definition.app" \
             -target="module.app.aws_ecs_service.app" \
             -replace="module.app.aws_ecs_task_definition.app" \
+            -var="docker_image=${IMAGE}" \
+            -refresh=false \
             -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
