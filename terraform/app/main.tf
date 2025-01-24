@@ -48,12 +48,13 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli ping"]
-        interval    = 10
-        timeout     = 5
+        command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
+        interval    = 5
+        timeout     = 2
         retries     = 3
-        startPeriod = 30
+        startPeriod = 10
       }
+      dependsOn = []  # No dependencies needed for Redis
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -94,14 +95,19 @@ resource "aws_ecs_task_definition" "app" {
           protocol     = "tcp"
         }
       ]
-      # Remove dependsOn to allow independent startup
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || exit 1"]
         interval    = 30
         timeout     = 10
         retries     = 5
-        startPeriod = 60
+        startPeriod = 90
       }
+      dependsOn = [
+        {
+          containerName = "redis-state"
+          condition = "HEALTHY"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
