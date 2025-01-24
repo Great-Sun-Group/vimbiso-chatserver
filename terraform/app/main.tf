@@ -36,12 +36,12 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       command = [
-        "--protected-mode", "no",
+        "--protected-mode", "yes",  # Enable protected mode for security
         "--bind", "0.0.0.0",
-        "--maxmemory", "356mb",
+        "--maxmemory", "512mb",     # Increased memory for better performance
         "--maxmemory-policy", "allkeys-lru",
-        "--save", "",
-        "--appendonly", "no"
+        "--save", "",               # Explicitly disable persistence
+        "--appendonly", "no"        # No AOF persistence needed
       ]
       ulimits = [
         {
@@ -52,10 +52,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "/usr/local/bin/redis-cli -h localhost ping"]
-        interval    = 10
-        timeout     = 5
-        retries     = 2
-        startPeriod = 20
+        interval    = 30            # More forgiving health check interval
+        timeout     = 10           # Increased timeout
+        retries     = 5            # More retries before failing
+        startPeriod = 60           # Longer startup grace period
       }
       logConfiguration = {
         logDriver = "awslogs"
@@ -105,10 +105,10 @@ resource "aws_ecs_task_definition" "app" {
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-        interval    = 10
-        timeout     = 5
-        retries     = 2
-        startPeriod = 20
+        interval    = 30            # Match Redis health check interval
+        timeout     = 10           # Increased timeout
+        retries     = 5            # More retries
+        startPeriod = 60           # Match Redis startup grace period
       }
       logConfiguration = {
         logDriver = "awslogs"

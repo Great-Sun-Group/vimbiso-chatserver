@@ -70,21 +70,21 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SOCKET_CONNECT_TIMEOUT": 5,
-            "SOCKET_TIMEOUT": 5,
-            "RETRY_ON_TIMEOUT": False,  # Don't retry - fail fast
-            "MAX_CONNECTIONS": 20,
+            "SOCKET_CONNECT_TIMEOUT": 30,  # More forgiving timeout
+            "SOCKET_TIMEOUT": 30,
+            "RETRY_ON_TIMEOUT": True,  # Enable retries for reliability
+            "MAX_CONNECTIONS": 50,
             "CONNECTION_POOL_CLASS_KWARGS": {
-                "max_connections": 20,
-                "timeout": 5
+                "max_connections": 50,
+                "timeout": 30
             },
-            "CONNECTION_POOL_CLASS": "redis.BlockingConnectionPool",  # Use blocking pool
+            "CONNECTION_POOL_CLASS": "redis.ConnectionPool",  # Standard pool is sufficient
             "REDIS_CLIENT_KWARGS": {
                 "decode_responses": True,
-                "retry_on_timeout": False,  # Don't retry at client level either
-                "socket_keepalive": False,  # Don't keep connections alive
-                "socket_connect_timeout": 5,
-                "socket_timeout": 5
+                "retry_on_timeout": True,
+                "socket_keepalive": True,  # Keep connections alive
+                "socket_connect_timeout": 30,
+                "socket_timeout": 30
             }
         },
         "KEY_PREFIX": "vimbiso",

@@ -12,9 +12,9 @@ echo "Extracted Redis host: $REDIS_HOST"
 
 # Test Redis connectivity with increased timeout
 echo "Waiting for Redis to be ready..."
-max_attempts=12  # 12 attempts * 5s = 60s total
+max_attempts=10  # 10 attempts * 10s = 100s total
 attempt=1
-wait_time=5  # Keep 5s to allow Redis to initialize
+wait_time=10  # Increased wait time between attempts
 
 while true; do
     if [ $attempt -gt $max_attempts ]; then
@@ -26,8 +26,8 @@ while true; do
 
     echo "Attempting Redis connection (attempt $attempt/$max_attempts waiting ${wait_time}s)..."
 
-    # Try Redis connection with explicit timeout
-    if timeout 5 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
+    # Try Redis connection with increased timeout
+    if timeout 10 redis-cli -h "$REDIS_HOST" ping > /dev/null 2>&1; then
         echo "Redis connection successful!"
         break
     else
