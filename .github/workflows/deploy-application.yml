@@ -243,12 +243,12 @@ jobs:
                   --load-balancer-arns $ALB_ARN \
                   --query 'LoadBalancers[0].DNSName' \
                   --output text)
-                HEALTH_CHECK_URL="http://${ALB_DNS}/health/"
+                HEALTH_CHECK_URL="https://${ALB_DNS}/health/"
                 echo "Attempting health check at: $HEALTH_CHECK_URL"
                 echo "Raw curl output with -i to see headers:"
-                curl -i $HEALTH_CHECK_URL
+                curl -i -L -k $HEALTH_CHECK_URL
                 echo "Raw curl output saved to variable:"
-                COMPONENT_HEALTH=$(curl -s $HEALTH_CHECK_URL | tr -d '\r' || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
+                COMPONENT_HEALTH=$(curl -s -L -k $HEALTH_CHECK_URL | tr -d '\r' || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
                 echo "Hex dump of response:"
                 echo "$COMPONENT_HEALTH" | xxd
                 echo "Response length:"
@@ -260,7 +260,7 @@ jobs:
                 else
                     echo "Invalid JSON response"
                     echo "HTTP Response Code from curl:"
-                    curl -s -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL"
+                    curl -s -k -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL"
                 fi
 
                 APP_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.app')
@@ -329,4 +329,4 @@ jobs:
           echo ""
           echo "Component Status:"
           HEALTH_CHECK_URL="https://$(terraform output -raw domain_name)/health/"
-          curl -s $HEALTH_CHECK_URL | jq '.'
+          curl -s -k $HEALTH_CHECK_URL | jq '.'
