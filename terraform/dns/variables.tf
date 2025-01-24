@@ -8,12 +8,6 @@ variable "domain_name" {
   type        = string
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-}
-
 # ALB inputs
 variable "alb_arn" {
   description = "ARN of the application load balancer"

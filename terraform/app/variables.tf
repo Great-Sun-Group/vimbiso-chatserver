@@ -3,12 +3,6 @@ variable "environment" {
   type        = string
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-}
-
 # Task Configuration
 variable "task_cpu" {
   description = "The number of cpu units to reserve for the container"

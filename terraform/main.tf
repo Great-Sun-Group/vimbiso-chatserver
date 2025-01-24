@@ -25,11 +25,6 @@ locals {
 
   current_env = local.environments[var.environment]
 
-  common_tags = {
-    Environment = var.environment
-    Project     = "vimbiso-chatserver"
-    ManagedBy   = "terraform"
-  }
 }
 
 # Base infrastructure module
@@ -40,7 +35,6 @@ module "base" {
   vpc_cidr      = local.current_env.vpc_cidr
   az_count      = local.current_env.az_count
   container_port = local.current_env.container_port
-  tags          = local.common_tags
 }
 
 # DNS and HTTPS module
@@ -54,7 +48,6 @@ module "dns" {
   alb_zone_id      = module.base.alb_zone_id
   target_group_arn = module.base.target_group_arn
   enable_https     = var.enable_https
-  tags             = local.common_tags
 
   depends_on = [module.base]
 }
@@ -69,7 +62,6 @@ module "app" {
   min_capacity  = local.current_env.min_capacity
   max_capacity  = local.current_env.max_capacity
   docker_image  = var.docker_image
-  tags          = local.common_tags
 
   # Network configuration
   private_subnet_ids    = module.base.private_subnet_ids

@@ -2,9 +2,9 @@
 resource "aws_route53_zone" "main" {
   name = var.domain_name
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-zone-${var.environment}"
-  })
+  }
 }
 
 # Request ACM certificate
@@ -12,9 +12,9 @@ resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name
   validation_method = "DNS"
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-cert-${var.environment}"
-  })
+  }
 
   lifecycle {
     create_before_destroy = true

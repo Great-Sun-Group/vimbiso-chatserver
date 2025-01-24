@@ -4,9 +4,9 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-vpc-${var.environment}"
-  })
+  }
 }
 
 # Fetch AZs in the current region
@@ -20,9 +20,9 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   map_public_ip_on_launch = true
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-public-${var.environment}-${count.index + 1}"
-  })
+  }
 }
 
 # Private subnets
@@ -32,18 +32,18 @@ resource "aws_subnet" "private" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
   vpc_id            = aws_vpc.main.id
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-private-${var.environment}-${count.index + 1}"
-  })
+  }
 }
 
 # Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-igw-${var.environment}"
-  })
+  }
 }
 
 # NAT Gateway (single for dev, multi for prod)
@@ -56,9 +56,9 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-nat-${var.environment}-${count.index + 1}"
-  })
+  }
 }
 
 # Route Tables
@@ -70,9 +70,9 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-public-${var.environment}"
-  })
+  }
 }
 
 resource "aws_route_table" "private" {
@@ -84,9 +84,9 @@ resource "aws_route_table" "private" {
     nat_gateway_id = var.environment == "production" ? aws_nat_gateway.main[count.index].id : aws_nat_gateway.main[0].id
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-private-${var.environment}-${count.index + 1}"
-  })
+  }
 }
 
 # Route Table Associations
@@ -129,9 +129,9 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-alb-${var.environment}"
-  })
+  }
 }
 
 resource "aws_security_group" "ecs" {
@@ -170,9 +170,9 @@ resource "aws_security_group" "ecs" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ecs-${var.environment}"
-  })
+  }
 }
 
 # ALB
@@ -185,9 +185,9 @@ resource "aws_lb" "main" {
 
   enable_deletion_protection = var.environment == "production"
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-alb-${var.environment}"
-  })
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -220,9 +220,9 @@ resource "aws_lb_target_group" "app" {
     unhealthy_threshold = 5
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-tg-${var.environment}"
-  })
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -262,9 +262,9 @@ resource "aws_vpc_endpoint" "logs" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-logs-endpoint-${var.environment}"
-  })
+  }
 }
 
 # ECS VPC endpoints
@@ -275,9 +275,9 @@ resource "aws_vpc_endpoint" "ecs" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ecs-endpoint-${var.environment}"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "ecs_agent" {
@@ -287,9 +287,9 @@ resource "aws_vpc_endpoint" "ecs_agent" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ecs-agent-endpoint-${var.environment}"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "ecs_telemetry" {
@@ -299,9 +299,9 @@ resource "aws_vpc_endpoint" "ecs_telemetry" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ecs-telemetry-endpoint-${var.environment}"
-  })
+  }
 }
 
 # SSM endpoints for ECS Exec and Parameter Store
@@ -312,9 +312,9 @@ resource "aws_vpc_endpoint" "ssm" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ssm-endpoint-${var.environment}"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "ssmmessages" {
@@ -324,9 +324,9 @@ resource "aws_vpc_endpoint" "ssmmessages" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-ssmmessages-endpoint-${var.environment}"
-  })
+  }
 }
 
 resource "aws_vpc_endpoint" "kms" {
@@ -336,9 +336,9 @@ resource "aws_vpc_endpoint" "kms" {
   subnet_ids         = aws_subnet.private[*].id
   security_group_ids = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-kms-endpoint-${var.environment}"
-  })
+  }
 }
 
 # Security group for VPC endpoints
@@ -361,9 +361,9 @@ resource "aws_security_group" "vpc_endpoints" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-vpc-endpoints-${var.environment}"
-  })
+  }
 }
 
 # Explicitly set region for endpoints
@@ -374,12 +374,6 @@ provider "aws" {
 # Get current region
 data "aws_region" "current" {}
 
-# Add region to tags
-locals {
-  common_tags = merge(var.tags, {
-    Region = data.aws_region.current.name
-  })
-}
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
@@ -390,7 +384,7 @@ resource "aws_ecs_cluster" "main" {
     value = "enabled"
   }
 
-  tags = merge(var.tags, {
+  tags = {
     Name = "vimbiso-cluster-${var.environment}"
-  })
+  }
 }

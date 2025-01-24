@@ -21,6 +21,7 @@ jobs:
       DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
       # Application variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+      TF_VAR_enable_https: "true"
       TF_VAR_django_secret: ${{ secrets.DJANGO_SECRET }}
       TF_VAR_mycredex_app_url: ${{ secrets.MYCREDEX_APP_URL }}
       TF_VAR_client_api_key: ${{ secrets.CLIENT_API_KEY }}
@@ -103,7 +104,9 @@ jobs:
             -target="module.app.aws_ecs_service.app" \
             -replace="module.app.aws_ecs_task_definition.app" \
             -var="docker_image=${IMAGE}" \
+            -var="enable_https=true" \
             -refresh=false \
+            -refresh-only=false \
             -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
