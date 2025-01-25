@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from decouple import config as env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -43,12 +44,8 @@ ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
 # Storage paths
-DEPLOYED_TO_AWS = env('DEPLOYED_TO_AWS', default=False, cast=bool)
-if DEPLOYED_TO_AWS:
-    BASE_PATH = "/efs-vols/app-data/data"
-else:
-    BASE_PATH = BASE_DIR / 'data'
-    os.makedirs(BASE_PATH, exist_ok=True)
+BASE_PATH = BASE_DIR / 'data'
+os.makedirs(BASE_PATH, exist_ok=True, mode=0o755)  # Ensure proper permissions
 
 # Static files configuration
 STATIC_URL = "/static/"
@@ -73,19 +70,25 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SOCKET_CONNECT_TIMEOUT": 5,  # seconds
-            "SOCKET_TIMEOUT": 5,  # seconds
-            "RETRY_ON_TIMEOUT": True,
-            "MAX_CONNECTIONS": 10,
-            "HEALTH_CHECK_INTERVAL": 30,  # seconds
-            "CONNECTION_POOL_CLASS": "redis.ConnectionPool",
-            # Removed PARSER_CLASS since it's causing issues with newer Redis versions
+            "SOCKET_CONNECT_TIMEOUT": 30,  # More forgiving timeout
+            "SOCKET_TIMEOUT": 30,
+            "RETRY_ON_TIMEOUT": True,  # Enable retries for reliability
+            "MAX_CONNECTIONS": 50,
+            "CONNECTION_POOL_CLASS_KWARGS": {
+                "max_connections": 50,
+                "timeout": 30
+            },
+            "CONNECTION_POOL_CLASS": "redis.ConnectionPool",  # Standard pool is sufficient
             "REDIS_CLIENT_KWARGS": {
-                "decode_responses": True  # Match existing client configuration
+                "decode_responses": True,
+                "retry_on_timeout": True,
+                "socket_keepalive": True,  # Keep connections alive
+                "socket_connect_timeout": 30,
+                "socket_timeout": 30
             }
         },
-        "KEY_PREFIX": "vimbiso",  # Namespace cache keys
-        "TIMEOUT": None,  # Disable cache timeouts since we're using it for state
+        "KEY_PREFIX": "vimbiso",
+        "TIMEOUT": None,
     }
 }
 

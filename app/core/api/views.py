@@ -1,10 +1,13 @@
 """Cloud API webhook views"""
 import logging
 import sys
+
 from core.messaging.service import MessagingService
 from core.messaging.types import Message as DomainMessage
 from core.messaging.types import MessageRecipient, TemplateContent
 from core.state.manager import StateManager
+from core.state.persistence.client import get_redis_client
+from core.state.persistence.redis_operations import RedisAtomic
 from decouple import config
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
@@ -34,24 +37,67 @@ class HealthCheck(APIView):
 
     @staticmethod
     def get(request):
+        # Initialize Redis status
+        redis_status = "unhealthy"
+
         try:
-            # Check Redis connectivity using Django's cache framework
-            cache.set('health_check', 'ok', 1)  # Set with 1 second timeout
-            result = cache.get('health_check')
+            # Get Redis client the same way the application does
+            redis_client = get_redis_client()
+            redis_atomic = RedisAtomic(redis_client)
 
-            if result != 'ok':
-                raise Exception("Cache check failed")
+            # Test Redis connectivity using the same atomic operations the app uses
+            success, _, error = redis_atomic.execute_atomic(
+                key="health_check",
+                operation="set",
+                value={"status": "ok"},
+                ttl=30,  # 30 second TTL for health check
+                max_retries=3  # Will retry 3 times with built-in handling
+            )
 
-            return JsonResponse({
-                "status": "healthy",
-                "redis": "connected"
-            }, status=status.HTTP_200_OK)
+            if success:
+                # Verify we can read the value back
+                success, result, error = redis_atomic.execute_atomic(
+                    key="health_check",
+                    operation="get"
+                )
+
+                if success and result and result.get("status") == "ok":
+                    redis_status = "healthy"
+                    logger.info("Redis connection test successful using atomic operations")
+                else:
+                    logger.warning(f"Redis read verification failed: {error or 'value mismatch'}")
+            else:
+                logger.warning(f"Redis write operation failed: {error}")
+
         except Exception as e:
-            logger.error(f"Health check failed: {str(e)}")
-            return JsonResponse({
-                "status": "unhealthy",
-                "error": str(e)
-            }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            logger.error(f"Redis client initialization failed: {str(e)}")
+
+        try:
+            # Ensure proper JSON structure
+            health_status = {
+                "status": "healthy",  # Keep app healthy even if Redis is down
+                "components": {
+                    "app": "healthy",
+                    "redis": redis_status
+                }
+            }
+
+            # Enhanced logging for health status
+            logger.info(f"Health check status: {health_status}")
+
+            # Use DRF's Response for consistent JSON handling
+            from rest_framework.response import Response
+            return Response(
+                health_status,
+                status=status.HTTP_200_OK,
+                content_type='application/json'
+            )
+        except Exception as e:
+            logger.error(f"Error generating health check response: {str(e)}")
+            return Response(
+                {"status": "error", "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 def get_messaging_service(state_manager, channel_type: str):

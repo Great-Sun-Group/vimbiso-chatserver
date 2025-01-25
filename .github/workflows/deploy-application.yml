@@ -3,11 +3,9 @@ name: Deploy Application
 on:
   push:
     branches:
-      - prod
       - dev
-    paths-ignore:
-      - 'terraform/**'
-      - '.github/workflows/terraform-*.yml'
+      - prod
+      - "*deploy*"
   workflow_dispatch:
 
 jobs:
@@ -23,6 +21,7 @@ jobs:
       DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
       # Application variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+      TF_VAR_enable_https: "true"
       TF_VAR_django_secret: ${{ secrets.DJANGO_SECRET }}
       TF_VAR_mycredex_app_url: ${{ secrets.MYCREDEX_APP_URL }}
       TF_VAR_client_api_key: ${{ secrets.CLIENT_API_KEY }}
@@ -48,10 +47,29 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Image
+      - name: Copy Redis Image to ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: vimbiso-pay-${{ env.ENVIRONMENT }}
+        run: |
+          chmod +x scripts/copy-redis-to-ecr.sh
+          ./scripts/copy-redis-to-ecr.sh $ENVIRONMENT
+
+      - name: Ensure App Repository Exists
+        env:
+          ECR_REPOSITORY: vimbiso-${{ env.ENVIRONMENT }}
+        run: |
+          # Create ECR repository for app if it doesn't exist
+          aws ecr describe-repositories --repository-names ${ECR_REPOSITORY} --region af-south-1 || \
+          aws ecr create-repository \
+            --repository-name ${ECR_REPOSITORY} \
+            --image-scanning-configuration scanOnPush=true \
+            --encryption-configuration encryptionType=AES256 \
+            --region af-south-1
+
+      - name: Build and Push Application Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: vimbiso-${{ env.ENVIRONMENT }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build --no-cache --target $BUILD_TARGET \
@@ -66,8 +84,8 @@ jobs:
         run: |
           cd terraform
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          BUCKET_NAME="vimbiso-pay-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
-          TABLE_NAME="vimbiso-pay-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          BUCKET_NAME="vimbiso-terraform-state-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
+          TABLE_NAME="vimbiso-terraform-state-lock-${ENVIRONMENT}-${AWS_ACCOUNT_ID}"
 
           terraform init \
             -backend-config="bucket=${BUCKET_NAME}" \
@@ -80,13 +98,22 @@ jobs:
           TF_VAR_docker_image: ${{ env.IMAGE }}
         run: |
           cd terraform
-          terraform plan -input=false -lock-timeout=20m -target=module.ecs -out=plan.tfplan
+          # Only target the specific resources we want to update
+          terraform plan -input=false -lock-timeout=20m \
+            -target="module.app.aws_ecs_task_definition.app" \
+            -target="module.app.aws_ecs_service.app" \
+            -replace="module.app.aws_ecs_task_definition.app" \
+            -var="docker_image=${IMAGE}" \
+            -var="enable_https=true" \
+            -refresh=false \
+            -refresh-only=false \
+            -out=plan.tfplan
           terraform apply -input=false -lock-timeout=20m plan.tfplan
 
       - name: Wait for Deployment
         run: |
           echo "Waiting for deployment to complete..."
-          MAX_ATTEMPTS=12  # 12 minutes total with 60s interval
+          MAX_ATTEMPTS=30  # 15 minutes total with 30s interval
           ATTEMPTS=0
           DEPLOYMENT_DONE=false
           GRACE_PERIOD=180  # 3 minutes for container health
@@ -103,7 +130,7 @@ jobs:
             echo "===================="
 
             aws logs get-log-events \
-              --log-group-name "/ecs/vimbiso-pay-$ENVIRONMENT" \
+              --log-group-name "/ecs/vimbiso-$ENVIRONMENT" \
               --log-stream-name "${CONTAINER_NAME}/${CONTAINER_NAME}/${TASK_ID}" \
               --start-time ${START_TIME}000 \
               --limit 200 \
@@ -116,8 +143,8 @@ jobs:
             ELAPSED_TIME=$((CURRENT_TIME - DEPLOY_START_TIME))
 
             SERVICE_JSON=$(aws ecs describe-services \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service "vimbiso-pay-service-$ENVIRONMENT" \
+              --cluster "vimbiso-cluster-$ENVIRONMENT" \
+              --service "vimbiso-service-$ENVIRONMENT" \
               --query 'services[0]')
 
             PRIMARY_DEPLOYMENT=$(echo $SERVICE_JSON | jq -r '.deployments[] | select(.status == "PRIMARY")')
@@ -134,8 +161,8 @@ jobs:
 
             # Get running tasks
             RUNNING_TASKS=$(aws ecs list-tasks \
-              --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-              --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+              --cluster "vimbiso-cluster-$ENVIRONMENT" \
+              --service-name "vimbiso-service-$ENVIRONMENT" \
               --desired-status RUNNING \
               --query 'taskArns[]' \
               --output text)
@@ -143,7 +170,7 @@ jobs:
             if [ ! -z "$RUNNING_TASKS" ]; then
               echo "Checking health of running tasks..."
               aws ecs describe-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
                 --tasks $RUNNING_TASKS \
                 --query 'tasks[].containers[].{name: name, health: healthStatus}' \
                 --output table
@@ -151,43 +178,145 @@ jobs:
 
             # Check for failures
             if [ "$FAILED_TASKS" -gt 0 ] && [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-              echo "Failed tasks detected after grace period. Fetching logs..."
+              echo "Failed tasks detected after grace period. Fetching details..."
               FAILED_TASKS=$(aws ecs list-tasks \
-                --cluster "vimbiso-pay-cluster-$ENVIRONMENT" \
-                --service-name "vimbiso-pay-service-$ENVIRONMENT" \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --service-name "vimbiso-service-$ENVIRONMENT" \
                 --desired-status STOPPED \
                 --query 'taskArns[]' \
                 --output text)
 
               if [ ! -z "$FAILED_TASKS" ]; then
+                echo "Getting task failure reasons..."
                 echo "$FAILED_TASKS" | xargs -n1 | while read -r TASK_ARN; do
+                  echo "Task ARN: $TASK_ARN"
+                  # Get task details including stopped reason and last status
+                  aws ecs describe-tasks \
+                    --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                    --tasks "$TASK_ARN" \
+                    --query 'tasks[].{stoppedReason: stoppedReason, lastStatus: lastStatus, containers: containers[].{name: name, reason: reason, lastStatus: lastStatus, exitCode: exitCode}}' \
+                    --output json | jq '.'
+
+                  # Get task details from ECS Events for more context
+                  aws ecs describe-services \
+                    --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                    --services "vimbiso-service-$ENVIRONMENT" \
+                    --query 'services[].events[?contains(message, `'"$TASK_ARN"'`)]' \
+                    --output json | jq '.'
+
+                  # Try to get logs even if task failed early
                   TASK_ID=$(echo "$TASK_ARN" | awk -F'/' '{print $NF}')
                   START_TIME=$(($(date +%s) - 300))
                   get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
-                  get_container_logs "$TASK_ID" "vimbiso-pay-${ENVIRONMENT}" "$START_TIME"
+                  get_container_logs "$TASK_ID" "app" "$START_TIME"
                 done
               fi
               exit 1
             fi
 
-            # Check for success
-            if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ]; then
-              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
-                echo "Deployment completed successfully"
-                DEPLOYMENT_DONE=true
-                break
+              # Check container health status
+            if [ ! -z "$RUNNING_TASKS" ]; then
+              HEALTH_STATUS=$(aws ecs describe-tasks \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --tasks $RUNNING_TASKS \
+                --query 'tasks[].containers[].{name: name, health: healthStatus}' \
+                --output json)
+
+              REDIS_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "redis-state") | .health')
+              APP_HEALTH=$(echo $HEALTH_STATUS | jq -r '.[] | select(.name == "app") | .health')
+
+              # If app is running, check component health from health endpoint
+              if [ "$APP_HEALTH" != "UNKNOWN" ]; then
+                echo "Checking component health status..."
+                TARGET_GROUP_ARN=$(aws ecs describe-services \
+                  --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                  --services "vimbiso-service-$ENVIRONMENT" \
+                  --query 'services[0].loadBalancers[0].targetGroupArn' \
+                  --output text)
+
+                ALB_ARN=$(aws elbv2 describe-target-groups \
+                  --target-group-arns $TARGET_GROUP_ARN \
+                  --query 'TargetGroups[0].LoadBalancerArns[0]' \
+                  --output text)
+
+                ALB_DNS=$(aws elbv2 describe-load-balancers \
+                  --load-balancer-arns $ALB_ARN \
+                  --query 'LoadBalancers[0].DNSName' \
+                  --output text)
+                HEALTH_CHECK_URL="https://${ALB_DNS}/health/"
+                echo "Attempting health check at: $HEALTH_CHECK_URL"
+                echo "Raw curl output with -i to see headers:"
+                curl -i -L -k $HEALTH_CHECK_URL
+                echo "Raw curl output saved to variable:"
+                COMPONENT_HEALTH=$(curl -s -L -k $HEALTH_CHECK_URL | tr -d '\r' || echo '{"status":"error","components":{"app":"unknown","redis":"unknown"}}')
+                echo "Hex dump of response:"
+                echo "$COMPONENT_HEALTH" | xxd
+                echo "Response length:"
+                echo -n "$COMPONENT_HEALTH" | wc -c
+                echo "Attempting to parse response:"
+                if echo "$COMPONENT_HEALTH" | jq -e '.' >/dev/null 2>&1; then
+                    echo "Valid JSON response:"
+                    echo "$COMPONENT_HEALTH" | jq '.'
+                else
+                    echo "Invalid JSON response"
+                    echo "HTTP Response Code from curl:"
+                    curl -s -k -o /dev/null -w "%{http_code}" "$HEALTH_CHECK_URL"
+                fi
+
+                APP_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.app')
+                REDIS_COMPONENT_HEALTH=$(echo $COMPONENT_HEALTH | jq -r '.components.redis')
+
+                echo "Container Health Status:"
+                echo "  App Container: $APP_HEALTH"
+                echo "  Redis Container: $REDIS_HEALTH"
+                echo "Component Health Status:"
+                echo "  App Component: $APP_COMPONENT_HEALTH"
+                echo "  Redis Component: $REDIS_COMPONENT_HEALTH"
+              fi
+
+              # Check for success - all components must be healthy
+              if [ "$RUNNING_COUNT" = "$DESIRED_COUNT" ] && [ "$DESIRED_COUNT" -gt 0 ] && [ "$PENDING_COUNT" = "0" ] \
+                 && [ "$APP_HEALTH" = "HEALTHY" ] && [ "$APP_COMPONENT_HEALTH" = "healthy" ] \
+                 && [ "$REDIS_COMPONENT_HEALTH" = "healthy" ]; then
+                if [ $ELAPSED_TIME -gt $GRACE_PERIOD ]; then
+                  echo "Deployment completed successfully - All components healthy"
+                  DEPLOYMENT_DONE=true
+                  break
+                fi
+              fi
+
+              # If Redis is unhealthy after grace period, fail deployment
+              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ] && [ "$REDIS_COMPONENT_HEALTH" != "healthy" ]; then
+                echo "Deployment failed - Redis component unhealthy after grace period"
+                TASK_ID=$(echo "$RUNNING_TASKS" | awk -F'/' '{print $NF}')
+                START_TIME=$(($(date +%s) - 300))
+                get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+                get_container_logs "$TASK_ID" "app" "$START_TIME"
+                exit 1
+              fi
+
+              # If containers are running but not healthy after grace period, show logs
+              if [ $ELAPSED_TIME -gt $GRACE_PERIOD ] && [ "$RUNNING_COUNT" -gt 0 ] \
+                 && { [ "$APP_HEALTH" != "HEALTHY" ] || [ "$APP_COMPONENT_HEALTH" != "healthy" ]; }; then
+                echo "Containers running but not healthy after grace period. Fetching logs..."
+                TASK_ID=$(echo "$RUNNING_TASKS" | awk -F'/' '{print $NF}')
+                START_TIME=$(($(date +%s) - 300))
+                get_container_logs "$TASK_ID" "redis-state" "$START_TIME"
+                get_container_logs "$TASK_ID" "app" "$START_TIME"
+                echo "Deployment failed - containers not healthy after grace period"
+                exit 1
               fi
             fi
 
             ATTEMPTS=$((ATTEMPTS + 1))
             if [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; then
-              echo "Waiting 60 seconds... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
-              sleep 60
+              echo "Waiting 30 seconds... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
+              sleep 30
             fi
           done
 
           if [ "$DEPLOYMENT_DONE" != "true" ]; then
-            echo "Deployment timeout after $(($MAX_ATTEMPTS * 60)) seconds"
+            echo "Deployment timeout after $(($MAX_ATTEMPTS * 30)) seconds"
             exit 1
           fi
 
@@ -208,3 +337,7 @@ jobs:
           echo "Health Check:"
           echo "------------"
           echo "Endpoint: https://$(terraform output -raw domain_name)/health/"
+          echo ""
+          echo "Component Status:"
+          HEALTH_CHECK_URL="https://$(terraform output -raw domain_name)/health/"
+          curl -s -k $HEALTH_CHECK_URL | jq '.'

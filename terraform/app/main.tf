@@ -1,16 +1,15 @@
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "vimbiso-pay-cluster-${var.environment}"
+# Get current region and account ID for ECR URLs
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
+# Get ECS cluster from base module
+data "aws_ecs_cluster" "main" {
+  cluster_name = "vimbiso-cluster-${var.environment}"
 }
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
-  family                   = "vimbiso-pay-${var.environment}"
+  family                   = "vimbiso-${var.environment}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
@@ -18,39 +17,51 @@ resource "aws_ecs_task_definition" "app" {
   execution_role_arn       = aws_iam_role.ecs_execution.arn
   task_role_arn           = aws_iam_role.ecs_task.arn
 
+  ephemeral_storage {
+    size_in_gib = 21  # Minimum size for Fargate
+  }
+
   container_definitions = jsonencode([
     {
       name      = "redis-state"
-      image     = "redis:7.0-alpine"
-      essential = false
-      memory    = 512
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/redis-${var.environment}:7.0-alpine"
+      essential = true
+      memory    = 384
       cpu       = 256
       portMappings = [
         {
+          name = "redis"
           containerPort = 6379
           hostPort     = 6379
           protocol     = "tcp"
         }
       ]
+      entrypoint = ["/bin/sh", "-c"]
       command = [
-        "redis-server",
-        "--protected-mode", "no",
-        "--bind", "0.0.0.0",
-        "--maxmemory-policy", "allkeys-lru"
+        "apk add --no-cache netcat-openbsd && redis-server --protected-mode no --bind 0.0.0.0 --maxmemory 512mb --maxmemory-policy allkeys-lru --save \"\" --appendonly no --tcp-backlog 511 --tcp-keepalive 300"
+      ]
+      ulimits = [
+        {
+          name = "nofile",
+          softLimit = 65536,
+          hardLimit = 65536
+        }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "redis-cli ping"]
-        interval    = 30
-        timeout     = 5
+        command     = ["CMD-SHELL", "redis-cli ping || exit 1"]
+        interval    = 5
+        timeout     = 2
         retries     = 3
         startPeriod = 10
       }
+      dependsOn = []  # No dependencies needed for Redis
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
-          "awslogs-stream-prefix" = "redis"
+          "awslogs-stream-prefix" = "redis",
+          "awslogs-create-group"  = "true"
         }
       }
     },
@@ -58,8 +69,10 @@ resource "aws_ecs_task_definition" "app" {
       name      = "app"
       image     = var.docker_image
       essential = true
-      memory    = var.task_memory - 512  # Remaining memory after Redis
+      memory    = var.task_memory - 384  # Remaining memory after Redis (1664 MiB)
       cpu       = var.task_cpu - 256     # Remaining CPU after Redis
+      command   = ["/app/start_app.sh"]
+      user      = "appuser"  # Run as non-root user
       environment = [
         { name = "DJANGO_ENV", value = var.environment },
         { name = "DJANGO_SECRET", value = var.django_secret },
@@ -69,7 +82,11 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_ACCESS_TOKEN", value = var.whatsapp_access_token },
         { name = "WHATSAPP_PHONE_NUMBER_ID", value = var.whatsapp_phone_number_id },
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
-        { name = "REDIS_URL", value = "redis://localhost:6379/0" }
+        { name = "REDIS_URL", value = "redis://localhost:6379/0" },
+        { name = "ALLOWED_HOSTS", value = "*" },  # Allow all hosts since behind ALB
+        { name = "DEBUG", value = "false" },
+        { name = "APP_LOG_LEVEL", value = "INFO" },
+        { name = "DJANGO_LOG_LEVEL", value = "INFO" }
       ]
       portMappings = [
         {
@@ -79,45 +96,47 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
       healthCheck = {
-        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+        command     = ["CMD-SHELL", "curl -f http://localhost:8000/health/ | grep -q '\"status\"[[:space:]]*:[[:space:]]*\"healthy\"' || exit 1"]
         interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 30
+        timeout     = 10
+        retries     = 5
+        startPeriod = 90
       }
+      dependsOn = [
+        {
+          containerName = "redis-state"
+          condition = "HEALTHY"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.app.name
           "awslogs-region"        = data.aws_region.current.name
-          "awslogs-stream-prefix" = "app"
+          "awslogs-stream-prefix" = "app",
+          "awslogs-create-group"  = "true"
         }
       }
-      dependsOn = [
-        {
-          containerName = "redis-state"
-          condition     = "HEALTHY"
-        }
-      ]
     }
   ])
+
 }
 
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/vimbiso-pay-${var.environment}"
+  name              = "/ecs/vimbiso-${var.environment}"
   retention_in_days = 30
 }
 
 # ECS Service
 resource "aws_ecs_service" "app" {
-  name                               = "vimbiso-pay-service-${var.environment}"
-  cluster                           = aws_ecs_cluster.main.id
+  name                               = "vimbiso-service-${var.environment}"
+  cluster                           = data.aws_ecs_cluster.main.id
   task_definition                   = aws_ecs_task_definition.app.arn
   desired_count                     = var.min_capacity
   launch_type                       = "FARGATE"
   platform_version                  = "LATEST"
-  health_check_grace_period_seconds = 60
+  health_check_grace_period_seconds = 120  # Reduced since containers start independently
   enable_execute_command           = true  # Useful for debugging
   deployment_minimum_healthy_percent = 100  # Ensure no service interruption
   deployment_maximum_percent        = 200  # Allow double capacity for zero-downtime
@@ -125,9 +144,10 @@ resource "aws_ecs_service" "app" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [var.ecs_security_group_id]
-    assign_public_ip = false
+    assign_public_ip = false  # Use NAT Gateway for internet access
   }
 
+  # Remove service registry from service level since containers are in same task
   load_balancer {
     target_group_arn = var.target_group_arn
     container_name   = "app"
@@ -154,13 +174,13 @@ resource "aws_ecs_service" "app" {
 resource "aws_appautoscaling_target" "app" {
   max_capacity       = var.max_capacity
   min_capacity       = var.min_capacity
-  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.app.name}"
+  resource_id        = "service/${data.aws_ecs_cluster.main.cluster_name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
-  name               = "vimbiso-pay-cpu-autoscaling-${var.environment}"
+  name               = "vimbiso-cpu-autoscaling-${var.environment}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
@@ -178,7 +198,7 @@ resource "aws_appautoscaling_policy" "cpu" {
 }
 
 resource "aws_appautoscaling_policy" "memory" {
-  name               = "vimbiso-pay-memory-autoscaling-${var.environment}"
+  name               = "vimbiso-memory-autoscaling-${var.environment}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.app.resource_id
   scalable_dimension = aws_appautoscaling_target.app.scalable_dimension
@@ -197,7 +217,7 @@ resource "aws_appautoscaling_policy" "memory" {
 
 # CloudWatch Alarms
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
-  alarm_name          = "vimbiso-pay-cpu-high-${var.environment}"
+  alarm_name          = "vimbiso-cpu-high-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
   metric_name         = "CPUUtilization"
@@ -209,13 +229,13 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   alarm_actions      = [aws_appautoscaling_policy.cpu.arn]
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = data.aws_ecs_cluster.main.cluster_name
     ServiceName = aws_ecs_service.app.name
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "memory_high" {
-  alarm_name          = "vimbiso-pay-memory-high-${var.environment}"
+  alarm_name          = "vimbiso-memory-high-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
   metric_name         = "MemoryUtilization"
@@ -227,10 +247,7 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
   alarm_actions      = [aws_appautoscaling_policy.memory.arn]
 
   dimensions = {
-    ClusterName = aws_ecs_cluster.main.name
+    ClusterName = data.aws_ecs_cluster.main.cluster_name
     ServiceName = aws_ecs_service.app.name
   }
 }
-
-# Get current region
-data "aws_region" "current" {}

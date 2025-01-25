@@ -38,10 +38,19 @@ class StateManager(StateManagerInterface):
             )
 
         self.key_prefix = key_prefix
-        redis_client = get_redis_client()
-        self.atomic_state = AtomicStateManager(redis_client)
-        self._state = self._initialize_state()
         self._messaging = None  # Will be set by MessagingService
+
+        # Initialize Redis with explicit error handling
+        try:
+            redis_client = get_redis_client()
+            # Test connection immediately
+            redis_client.ping()
+            self.atomic_state = AtomicStateManager(redis_client)
+            self._state = self._initialize_state()
+        except Exception as e:
+            logger.error(f"Failed to initialize Redis connection: {str(e)}")
+            # Re-raise with clear message to fail fast
+            raise RuntimeError(f"Redis initialization failed: {str(e)}") from e
 
     @property
     def messaging(self) -> MessagingServiceInterface:

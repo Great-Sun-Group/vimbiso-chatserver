@@ -19,7 +19,7 @@ show_help() {
 
 # Default values
 SECONDS_TO_FETCH=""
-LOG_GROUP="/ecs/vimbiso-pay-development"
+LOG_GROUP="/ecs/vimbiso-development"
 AWS_REGION="af-south-1"
 
 # Check required environment variables

@@ -1,5 +1,5 @@
 # Base stage for shared configurations
-FROM python:3.13.0-slim AS base
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,13 +15,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    locales \
-    netcat-traditional \
     redis-tools \
-    gosu \
+    netcat-traditional \
+    iproute2 \
     dnsutils \
-    && locale-gen en_US.UTF-8 \
-    && update-locale \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -73,7 +70,7 @@ COPY requirements /app/requirements
 RUN pip install --no-cache-dir -r requirements/prod.txt
 
 # Remove build dependencies but keep runtime dependencies
-RUN apt-mark manual redis-tools curl gosu dnsutils netcat-traditional && \
+RUN apt-mark manual redis-tools curl netcat-traditional iproute2 dnsutils && \
     apt-get purge -y build-essential && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
@@ -87,17 +84,20 @@ RUN mkdir -p \
     /app/data/db \
     /app/data/static \
     /app/data/media \
+    /app/data/migrations \
+    && touch /app/data/db.sqlite3 \
     && chown -R appuser:appuser /app \
-    && chmod -R 755 /app/data \
+    && chmod -R 777 /app/data \
     && chmod +x /app/start_app.sh \
-    && find /app/data -type d -exec chmod 755 {} \; \
-    && find /app/data -type f -exec chmod 644 {} \;
+    && find /app/data -type d -exec chmod 777 {} \; \
+    && find /app/data -type f -exec chmod 666 {} \; \
+    && chown -R appuser:appuser /app/data
 
 # Note: Not switching to appuser here since task definition handles user switching
 # This allows the entrypoint script to run as root and switch users as needed
 
-# Health check aligned with task definition and service grace period
-HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=3 \
+# Health check configuration aligned with compose.yaml
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=2 \
     CMD curl -f http://localhost:${PORT}/health/ || exit 1
 
 # Expose port

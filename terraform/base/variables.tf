@@ -21,12 +21,6 @@ variable "container_port" {
   default     = 8000
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-}
-
 # Environment specific defaults
 locals {
   env_defaults = {

@@ -17,7 +17,6 @@ services:
       - ALLOWED_HOSTS=*
       - DJANGO_SECRET=local-secret-key
       - REDIS_URL=redis://redis-state:6379/0
-      - DEPLOYED_TO_AWS=false
       - WHATSAPP_API_URL=${WHATSAPP_API_URL}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
@@ -31,26 +30,23 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
     networks:
       - app-network
 
   redis-state:
     image: redis:7.0-alpine
-    volumes:
-      - ./data/redis/state:/data
     ports:
       - "6379:6379"
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly yes --appendfsync everysec --save ""
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 2
     networks:
       - app-network
 

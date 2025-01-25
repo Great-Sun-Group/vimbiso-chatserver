@@ -2,9 +2,9 @@
 resource "aws_route53_zone" "main" {
   name = var.domain_name
 
-  tags = merge(var.tags, {
-    Name = "vimbiso-pay-zone-${var.environment}"
-  })
+  tags = {
+    Name = "vimbiso-zone-${var.environment}"
+  }
 }
 
 # Request ACM certificate
@@ -12,9 +12,9 @@ resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name
   validation_method = "DNS"
 
-  tags = merge(var.tags, {
-    Name = "vimbiso-pay-cert-${var.environment}"
-  })
+  tags = {
+    Name = "vimbiso-cert-${var.environment}"
+  }
 
   lifecycle {
     create_before_destroy = true
@@ -41,9 +41,10 @@ resource "aws_route53_record" "cert_validation" {
 
 # Create A record for the application
 resource "aws_route53_record" "app" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = var.domain_name
-  type    = "A"
+  zone_id         = aws_route53_zone.main.zone_id
+  name            = var.domain_name
+  type            = "A"
+  allow_overwrite = true
 
   alias {
     name                   = var.alb_dns_name
@@ -52,8 +53,9 @@ resource "aws_route53_record" "app" {
   }
 }
 
-# Create HTTP listener (initially)
+# Create HTTP listener (only when HTTPS is not enabled)
 resource "aws_lb_listener" "http" {
+  count             = var.enable_https ? 0 : 1
   load_balancer_arn = var.alb_arn
   port              = "80"
   protocol          = "HTTP"
