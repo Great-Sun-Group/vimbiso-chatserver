@@ -62,7 +62,7 @@
     "postStartCommand": "sudo apt-get update && sudo apt-get install -y chromium && sudo cp /workspaces/vimbiso-chatserver/scripts/fetchlogs.sh /usr/local/bin/fetchlogs && sudo chmod +x /usr/local/bin/fetchlogs",
     "remoteEnv": {
         "AWS_REGION": "af-south-1",
-        "AWS_ACCESS_KEY_ID": "${localEnv:VIMBISOPAY_DEVELOPMENT_AWS_ACCESS_KEY_ID}",
-        "AWS_SECRET_ACCESS_KEY": "${localEnv:VIMBISOPAY_DEVELOPMENT_AWS_SECRET_ACCESS_KEY}"
+        "AWS_ACCESS_KEY_ID": "${localEnv:VIMBISO_CHATSERVER_DEV_AWS_ACCESS_KEY_ID}",
+        "AWS_SECRET_ACCESS_KEY": "${localEnv:VIMBISO_CHATSERVER_DEV_AWS_SECRET_ACCESS_KEY}"
     }
 }
