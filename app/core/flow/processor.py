@@ -188,10 +188,39 @@ class FlowProcessor:
                 logger.info(f"Component result: {result}")
                 logger.info(f"Awaiting input: {self.state_manager.is_awaiting_input()}")
 
-                # Handle component failure
+                # Handle component failure by transitioning to login flow
                 if next_step is None:
                     logger.error(f"Component failed: {context}.{component}")
-                    return None
+                    logger.info("Transitioning to login flow due to component failure")
+
+                    # Clear state and start login flow
+                    channel_type = self.state_manager.get_channel_type()
+                    channel_id = self.state_manager.get_channel_id()
+                    current_message = self.state_manager.get_incoming_message()
+
+                    self.state_manager.clear_all_state()
+
+                    # Reinitialize channel
+                    self.state_manager.initialize_channel(
+                        channel_type=channel_type,
+                        channel_id=channel_id
+                    )
+
+                    # Restore message
+                    if current_message:
+                        self.state_manager.set_incoming_message(current_message)
+
+                    # Start login flow
+                    self.state_manager.transition_flow(
+                        path="login",
+                        component="Greeting"
+                    )
+
+                    # Update context and component for next iteration
+                    context = "login"
+                    component = "Greeting"
+                    current_state = self.state_manager.get_state_value("component_data")
+                    continue
 
                 # Handle validation error
                 if isinstance(result, ValidationResult) and not result.valid:

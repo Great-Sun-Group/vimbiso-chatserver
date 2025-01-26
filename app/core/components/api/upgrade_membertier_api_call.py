@@ -109,40 +109,38 @@ class UpgradeMembertierApiCall(ApiComponent):
                     details={"error": "Missing active_account_id in state"}
                 )
 
-            # Get today's date for start date
-            from datetime import datetime
-            start_date = datetime.now().strftime("%Y-%m-%d")
-
-            # Create subscription
-            subscription_payload = {
-                "sourceAccountID": source_account_id,
-                "templateType": "MEMBERTIER_SUBSCRIPTION",
-                "memberTier": 3,
-                "payFrequency": 28,
-                "startDate": start_date,
-                "amount": 1.00,  # Required $1.00 for tier 3
-                "denomination": "USD",  # Always USD for tier subscriptions
-                "securedCredex": True  # Required for subscription payments
+            # Construct proper payload dictionary
+            payload = {
+                "personalAccountID": source_account_id
             }
 
             response = make_api_request(
-                url="createRecurring",
-                payload=subscription_payload,
+                url="hustler10k",
+                payload=payload,
                 method="POST",
                 state_manager=self.state_manager
             )
 
             # Process response
-            result, error = handle_api_response(
-                response=response,
-                state_manager=self.state_manager
-            )
-            if error:
-                logger.error(f"Failed to create tier 3 subscription: {error}")
+            try:
+                result, error = handle_api_response(
+                    response=response,
+                    state_manager=self.state_manager
+                )
+                if error:
+                    logger.error(f"Failed to create tier 3 subscription: {error}")
+                    return ValidationResult.failure(
+                        message=f"Failed to create subscription: {error}",
+                        field="api_call",
+                        details={"error": error}
+                    )
+            except AttributeError as e:
+                # Handle case where response is not properly structured
+                logger.error(f"Invalid API response structure: {str(e)}")
                 return ValidationResult.failure(
-                    message=f"Failed to create subscription: {error}",
+                    message="Invalid API response received",
                     field="api_call",
-                    details={"error": error}
+                    details={"error": str(e)}
                 )
 
             return ValidationResult.success(result)
@@ -163,9 +161,26 @@ class UpgradeMembertierApiCall(ApiComponent):
             action_type = action.get("type")
 
             # Handle different action types and errors
-            if action_type == "RECURRING_CREATED":
+            if action_type == "HUSTLER_10K_ENROLLED":
                 logger.info("Tier 3 subscription created successfully")
                 self.state_manager.messaging.send_text("Hustle hard 💥")
+            elif action_type == "RECURRING_CREATED":
+                logger.info("Tier 3 subscription created successfully")
+                self.state_manager.messaging.send_text("Hustle hard 💥")
+            elif action_type == "ERROR_VALIDATION":
+                error_details = action.get("details", {})
+                error_code = error_details.get("code")
+                error_reason = error_details.get("reason", "Unknown error occurred")
+
+                if error_code == "INSUFFICIENT_SECURED_BALANCE":
+                    logger.info(f"Insufficient balance for upgrade: {error_reason}")
+                    self.state_manager.messaging.send_text(
+                        f"❌ Unable to upgrade: {error_reason}\n\n"
+                        "💡 Please ensure you have sufficient secured balance before trying again."
+                    )
+                else:
+                    logger.error(f"Validation error during upgrade: {error_reason}")
+                    self.state_manager.messaging.send_text(f"❌ Failed to upgrade member tier: {error_reason}")
             elif action_type == "ERROR":
                 error_message = action.get("details", {}).get("message", "Unknown error occurred")
                 logger.error(f"Upgrade failed with error: {error_message}")
@@ -177,14 +192,14 @@ class UpgradeMembertierApiCall(ApiComponent):
             # Tell headquarters to return to dashboard
             self.set_result("send_dashboard")
 
-            # Get tier info from scheduleInfo
-            schedule_info = response.get("data", {}).get("action", {}).get("details", {}).get("scheduleInfo", {})
-            previous_tier = schedule_info.get("previousTier")
-            new_tier = schedule_info.get("memberTier")
+            # Get tier info from action details
+            details = action.get("details", {})
+            previous_tier = details.get("previousTier")
+            new_tier = details.get("newTier")
 
             return ValidationResult.success({
                 "action": action,
-                "upgraded": action_type == "RECURRING_CREATED",
+                "upgraded": action_type in ["HUSTLER_10K_ENROLLED", "RECURRING_CREATED"],
                 "previous_tier": previous_tier,
                 "new_tier": new_tier
             })
