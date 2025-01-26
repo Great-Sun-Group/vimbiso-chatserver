@@ -22,7 +22,9 @@ UPGRADE_CONFIRMATION = """📈 *Member Tier Upgrade*
 
 👤 Member: {member_name}
 🌟 Current Tier: Open (Free)
-💫 Next Tier: Hustler ($1 USD/month)"""
+💫 Next Tier: Hustler ($1 USD/month)
+
+🔥 If you are hustling hard to make a dollar in the markets of Mbare or anywhere in Zimbabwe's informal economy, be one of the first 10,000 VimbisoPay Hustlers and get a full year for $1 💥💥💥"""
 
 
 class ConfirmUpgrade(ConfirmBase):
