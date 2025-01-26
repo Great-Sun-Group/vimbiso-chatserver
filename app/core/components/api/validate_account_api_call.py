@@ -111,11 +111,16 @@ class ValidateAccountApiCall(ApiComponent):
             self.state_manager.messaging.send_text(
                 text="❌ Oops, that 💳accountHandle doesn't exist. Please try again."
             )
-            # Return to handle input
-            self.update_component_data(
-                data={"handle": None},  # Clear invalid handle but preserve other data like amount
-                awaiting_input=False
-            )
+            # Clear invalid handle but preserve other data like amount
+            component_data = self.state_manager.get_state_value("component_data", {})
+            data = component_data.get("data", {})
+            data["handle"] = None
+            self.update_data({"data": data})
+
+            # Return to handle input component
+            self.set_result("return_to_handle")
+            self.set_awaiting_input(False)
+
             return ValidationResult.failure(
                 message="Account not found",
                 field="handle",

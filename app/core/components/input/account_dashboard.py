@@ -22,7 +22,7 @@ ACCOUNT_DASHBOARD = """*💳 {account}*
 💰 {secured_balances}
 
 *📊 Net Assets*
-*📊 {net_assets}{tier_limit_display}*"""
+📊 {net_assets}{tier_limit_display}{pending_offer_message}"""
 
 
 class AccountDashboard(InputComponent):
@@ -81,7 +81,7 @@ class AccountDashboard(InputComponent):
 
                 # Format secured balances
                 secured_balances = active_account.get("balanceData", {}).get("securedNetBalancesByDenom", [])
-                secured_balances_str = "\n💰 ".join(secured_balances) if secured_balances else "- 0.00 USD"
+                secured_balances_str = "\n💰 ".join(secured_balances) if secured_balances else "0.00 USD"
 
                 # Format net assets
                 try:
@@ -105,9 +105,16 @@ class AccountDashboard(InputComponent):
                 if member and member.get("memberTier", 0) < 3:
                     try:
                         amount_remaining = float(member.get("remainingAvailableUSD", "0.00"))
-                        tier_limit_display = f"\n\n⏳ *Daily Member Tier Limit*\n  {amount_remaining:.2f} USD"
+                        tier_limit_display = f"\n\n⏳ *Daily Open Tier Limit*\n⏳  {amount_remaining:.2f} USD"
                     except (ValueError, TypeError):
-                        tier_limit_display = "\n\n⏳ *Daily Member Tier Limit*\n0.00 USD"
+                        tier_limit_display = "\n\n⏳ *Daily Open Tier Limit*\n0.00 USD"
+
+                # Get pending counts from active account
+                pending_in = len(active_account.get("pendingInData", []))
+                pending_out = len(active_account.get("pendingOutData", []))
+
+                # Format pending offer message
+                pending_offer_message = f"\n\n💸 {pending_in} offers to accept" if pending_in > 0 else ""
 
                 # Format final display data
                 formatted_data = {
@@ -115,15 +122,12 @@ class AccountDashboard(InputComponent):
                     "handle": handle,
                     "secured_balances": secured_balances_str,
                     "net_assets": net_assets,
-                    "tier_limit_display": tier_limit_display
+                    "tier_limit_display": tier_limit_display,
+                    "pending_offer_message": pending_offer_message
                 }
 
                 # Get account info text
                 account_info = ACCOUNT_DASHBOARD.format(**formatted_data)
-
-                # Get pending counts from active account
-                pending_in = len(active_account.get("pendingInData", []))
-                pending_out = len(active_account.get("pendingOutData", []))
 
                 logger.info(f"Active account pendingOutData in dashboard: {active_account.get('pendingOutData')}")
                 logger.info(f"Pending out count: {pending_out}")
@@ -160,7 +164,7 @@ class AccountDashboard(InputComponent):
                 # Member Actions section - only show if there are member actions
                 member_options = []
                 if member.get("memberTier") == 1:
-                    member_options.append({"id": "upgrade_membertier", "title": "⭐ Upgrade Member Tier", "description": "Upgrade to the Hustler tier for $1"})
+                    member_options.append({"id": "upgrade_membertier", "title": "🌟 Hustler Tier 💫", "description": "$1/month *First 10,000 Hustlers: $1 for the first year* 🔥💥💥"})
 
                 if member_options:
                     sections.append(Section(

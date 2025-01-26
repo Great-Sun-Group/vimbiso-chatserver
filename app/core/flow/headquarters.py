@@ -48,8 +48,8 @@ def get_next_component(
         case ("onboard", "FirstNameInput"):
             return "onboard", "LastNameInput"  # Continue with user details
         case ("onboard", "LastNameInput"):
-            return "onboard", "Greeting"  # Send random greeting while API call processes
-        case ("onboard", "Greeting"):
+            return "onboard", "ProcessingNow"  # Send message while API call processes
+        case ("onboard", "ProcessingNow"):
             return "onboard", "OnBoardMemberApiCall"  # Create member and account with collected details
         case ("onboard", "OnBoardMemberApiCall"):
             return "account", "AccountDashboard"  # Send account dashboard
@@ -65,7 +65,7 @@ def get_next_component(
             if component_result == "cancel_offer":
                 return "cancel_offer", "OfferListDisplay"  # List pending offers to cancel
             if component_result == "view_ledger":
-                return "view_ledger", "Greeting"  # Send random greeting while API call processes
+                return "view_ledger", "ProcessingNow"  # Send message while API call processes
             if component_result == "upgrade_membertier":
                 return "upgrade_membertier", "ConfirmUpgrade"  # Send upgrade confirmation message
 
@@ -75,18 +75,20 @@ def get_next_component(
         case ("offer_secured", "HandleInput"):
             return "offer_secured", "ValidateAccountApiCall"  # Validate account exists and get details
         case ("offer_secured", "ValidateAccountApiCall"):
+            if component_result == "return_to_handle":
+                return "offer_secured", "HandleInput"  # Return to handle input for invalid handle
             return "offer_secured", "ConfirmOfferSecured"  # Confirm amount, denom, issuer and recipient accounts
         case ("offer_secured", "ConfirmOfferSecured"):
-            return "offer_secured", "Greeting"  # Send random greeting while api call processes
-        case ("offer_secured", "Greeting"):
+            return "offer_secured", "ProcessingNow"  # Send message while API call processes
+        case ("offer_secured", "ProcessingNow"):
             return "offer_secured", "CreateCredexApiCall"  # Create offer
         case ("offer_secured", "CreateCredexApiCall"):
             return "account", "AccountDashboard"  # Return to account dashboard (success/fail message passed in state for dashboard display)
 
         # Upgrade member tier path
         case ("upgrade_membertier", "ConfirmUpgrade"):
-            return "upgrade_membertier", "Greeting"  # Process upgrade after confirmation
-        case ("upgrade_membertier", "Greeting"):
+            return "upgrade_membertier", "ProcessingNow"  # Process upgrade after confirmation
+        case ("upgrade_membertier", "ProcessingNow"):
             return "upgrade_membertier", "UpgradeMembertierApiCall"  # Process upgrade after confirmation
         case ("upgrade_membertier", "UpgradeMembertierApiCall"):
             return "account", "AccountDashboard"  # Return to dashboard after upgrade
@@ -94,10 +96,10 @@ def get_next_component(
         # Accept offer path
         case ("accept_offer", "OfferListDisplay"):
             if component_result == "process_offer":
-                return "accept_offer", "Greeting"  # Send random greeting while API call processes
+                return "accept_offer", "ProcessingNow"  # Send message while API call processes
             if component_result == "return_to_dashboard":
                 return "account", "AccountDashboard"  # Return to dashboard if no offers or user selected back
-        case ("accept_offer", "Greeting"):
+        case ("accept_offer", "ProcessingNow"):
             return "accept_offer", "ProcessOfferApiCall"  # Process selected offer
         case ("accept_offer", "ProcessOfferApiCall"):
             if component_result == "return_to_list":
@@ -108,10 +110,10 @@ def get_next_component(
         # Decline offer path
         case ("decline_offer", "OfferListDisplay"):
             if component_result == "process_offer":
-                return "decline_offer", "Greeting"  # Send random greeting while API call processes
+                return "decline_offer", "ProcessingNow"  # Send message while API call processes
             if component_result == "return_to_dashboard":
                 return "account", "AccountDashboard"  # Return to dashboard if no offers or user selected back
-        case ("decline_offer", "Greeting"):
+        case ("decline_offer", "ProcessingNow"):
             return "decline_offer", "ProcessOfferApiCall"  # Process selected offer
         case ("decline_offer", "ProcessOfferApiCall"):
             if component_result == "return_to_list":
@@ -122,10 +124,10 @@ def get_next_component(
         # Cancel offer path
         case ("cancel_offer", "OfferListDisplay"):
             if component_result == "process_offer":
-                return "cancel_offer", "Greeting"  # Send random greeting while API call processes
+                return "cancel_offer", "ProcessingNow"  # Send message while API call processes
             if component_result == "return_to_dashboard":
                 return "account", "AccountDashboard"  # Return to dashboard if no offers or user selected back
-        case ("cancel_offer", "Greeting"):
+        case ("cancel_offer", "ProcessingNow"):
             return "cancel_offer", "ProcessOfferApiCall"  # Process selected offer
         case ("cancel_offer", "ProcessOfferApiCall"):
             if component_result == "return_to_list":

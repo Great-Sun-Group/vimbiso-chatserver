@@ -14,6 +14,7 @@ from .confirm import ConfirmBase
 
 # Display components
 from .display.greeting import Greeting
+from .display.processing_now import ProcessingNow
 
 # Input components
 from .input.welcome import Welcome
@@ -48,6 +49,7 @@ __all__ = [
 
     # Display components
     "Greeting",
+    "ProcessingNow",
 
     # Input components
     "AccountDashboard",
