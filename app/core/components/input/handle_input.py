@@ -79,6 +79,17 @@ class HandleInput(InputComponent):
         # Store validated handle
         self.update_data({"handle": handle})
 
-        # Release input wait
+        # Keep awaiting input if there's a validation error in state
+        api_response = self.state_manager.get_state_value("action", {})
+        if api_response.get("type") == "ERROR_VALIDATION":
+            error_details = api_response.get("details", {})
+            if error_details.get("field") == "accountHandle":
+                self.state_manager.messaging.send_text(
+                    text=f"❌ {error_details.get('reason')}\n\n{HANDLE_PROMPT}"
+                )
+                self.set_awaiting_input(True)
+                return ValidationResult.success(None)
+
+        # Release input wait if no validation error
         self.set_awaiting_input(False)
-        return ValidationResult.success(None)  # Signal to move to ConfirmOfferSecured
+        return ValidationResult.success(None)  # Signal to move to next component
