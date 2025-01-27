@@ -14,12 +14,8 @@ VALID_DENOMS: Set[str] = {"CXX", "XAU", "USD", "CAD", "ZWG"}
 
 # Amount prompt template
 AMOUNT_PROMPT = """💸 *Offer how much❓*
-✨ Defaults to USD:
-*9* || *99* || *9999.99* || *0.99*
-✨ Denom placement:
-*99 ZWG* || *ZWG 99*
-✨ Denominations:
-*CXX* || *XAU* || *USD* || *CAD* || *ZWG*"""
+✨ Defaults to USD or use
+✨ ZWG 99.99 or 9.99 ZWG"""
 
 
 class AmountInput(InputComponent):
