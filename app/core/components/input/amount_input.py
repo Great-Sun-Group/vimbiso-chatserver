@@ -155,7 +155,8 @@ class AmountInput(InputComponent):
 
             if active_account:
                 # Extract balances from account
-                balances = active_account.get("securedBalances", "").split(",")
+                balance_data = active_account.get("balanceData", {})
+                balances = balance_data.get("securedNetBalancesByDenom", [])
                 # Find matching denom balance
                 matching_balance = next(
                     (bal.strip() for bal in balances if denom in bal),
