@@ -65,9 +65,18 @@ class LoginApiCall(ApiComponent):
                 self.set_result("start_onboarding")
                 return ValidationResult.success(None)
 
-            # For existing members, set active account
+            # For existing members, check tier and handle routing
             try:
                 dashboard = self.state_manager.get_state_value("dashboard", {})
+                member = dashboard.get("member", {})
+                member_tier = member.get("memberTier")
+
+                # For tier 5, show multi-account dashboard
+                if member_tier == 5:
+                    self.set_result("send_multi_dashboard")
+                    return ValidationResult.success(result)
+
+                # For other tiers, set personal account as active
                 accounts = dashboard.get("accounts", [])
                 personal_account = next(
                     (acc for acc in accounts if acc.get("accountType") == "PERSONAL"),

@@ -161,10 +161,12 @@ class AccountDashboard(InputComponent):
                         rows=account_options
                     ))
 
-                # Member Actions section - only show if there are member actions
+                # Member Actions section
                 member_options = []
                 if member.get("memberTier") == 1:
                     member_options.append({"id": "upgrade_membertier", "title": "🌟 Hustler Tier 💫", "description": "$1/month *First 10,000 Hustlers: $1 for the first year* 🔥💥💥"})
+                elif member.get("memberTier") == 5:
+                    member_options.append({"id": "switch_account", "title": "🔄 Switch Account", "description": "Switch to a different account"})
 
                 if member_options:
                     sections.append(Section(
@@ -210,7 +212,8 @@ class AccountDashboard(InputComponent):
                             "decline_offer",
                             "cancel_offer",
                             "view_ledger",
-                            "upgrade_membertier"
+                            "upgrade_membertier",
+                            "switch_account"
                         ]
                         if selection in valid_paths:
                             # Tell headquarters which path to take and release input wait
