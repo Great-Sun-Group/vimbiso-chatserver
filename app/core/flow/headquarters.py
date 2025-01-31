@@ -79,6 +79,8 @@ def get_next_component(
                 return "offer_secured", "HandleInput"  # Return to handle input for invalid handle
             return "offer_secured", "ConfirmOfferSecured"  # Confirm amount, denom, issuer and recipient accounts
         case ("offer_secured", "ConfirmOfferSecured"):
+            if component_result == "cancelled":
+                return "account", "AccountDashboard"  # Return to dashboard if cancelled
             return "offer_secured", "ProcessingNow"  # Send message while API call processes
         case ("offer_secured", "ProcessingNow"):
             return "offer_secured", "CreateCredexApiCall"  # Create offer
@@ -87,6 +89,8 @@ def get_next_component(
 
         # Upgrade member tier path
         case ("upgrade_membertier", "ConfirmUpgrade"):
+            if component_result == "cancelled":
+                return "account", "AccountDashboard"  # Return to dashboard if cancelled
             return "upgrade_membertier", "ProcessingNow"  # Process upgrade after confirmation
         case ("upgrade_membertier", "ProcessingNow"):
             return "upgrade_membertier", "UpgradeMembertierApiCall"  # Process upgrade after confirmation
