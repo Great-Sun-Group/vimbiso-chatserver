@@ -37,10 +37,17 @@ def get_next_component(
         case ("login", "Greeting"):
             return "login", "LoginApiCall"  # Check if user exists
         case ("login", "LoginApiCall"):
+            if component_result == "send_multi_dashboard":
+                return "multi_account", "MultiAccountDashboard"  # Send multi-account dashboard for tier 5
             if component_result == "send_dashboard":
                 return "account", "AccountDashboard"  # Send account dashboard
             if component_result == "start_onboarding":
                 return "onboard", "Welcome"  # Send first message in onboarding path
+
+        # Multi-account dashboard path
+        case ("multi_account", "MultiAccountDashboard"):
+            if component_result == "account_selected":
+                return "account", "AccountDashboard"  # Transition to selected account's dashboard
 
         # Onboard path
         case ("onboard", "Welcome"):
@@ -68,6 +75,8 @@ def get_next_component(
                 return "view_ledger", "ProcessingNow"  # Send message while API call processes
             if component_result == "upgrade_membertier":
                 return "upgrade_membertier", "ConfirmUpgrade"  # Send upgrade confirmation message
+            if component_result == "switch_account":
+                return "multi_account", "MultiAccountDashboard"  # Switch to multi-account dashboard
 
         # Offer secured credex path
         case ("offer_secured", "AmountInput"):
@@ -79,6 +88,8 @@ def get_next_component(
                 return "offer_secured", "HandleInput"  # Return to handle input for invalid handle
             return "offer_secured", "ConfirmOfferSecured"  # Confirm amount, denom, issuer and recipient accounts
         case ("offer_secured", "ConfirmOfferSecured"):
+            if component_result == "cancelled":
+                return "account", "AccountDashboard"  # Return to dashboard if cancelled
             return "offer_secured", "ProcessingNow"  # Send message while API call processes
         case ("offer_secured", "ProcessingNow"):
             return "offer_secured", "CreateCredexApiCall"  # Create offer
@@ -87,6 +98,8 @@ def get_next_component(
 
         # Upgrade member tier path
         case ("upgrade_membertier", "ConfirmUpgrade"):
+            if component_result == "cancelled":
+                return "account", "AccountDashboard"  # Return to dashboard if cancelled
             return "upgrade_membertier", "ProcessingNow"  # Process upgrade after confirmation
         case ("upgrade_membertier", "ProcessingNow"):
             return "upgrade_membertier", "UpgradeMembertierApiCall"  # Process upgrade after confirmation

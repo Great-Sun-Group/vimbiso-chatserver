@@ -147,8 +147,12 @@ class ConfirmUpgrade(ConfirmBase):
             logger.debug(f"Button ID: {button_id}")
             if button_id == "cancel":
                 logger.info("Upgrade rejected")
-                # Store confirmation status
+                # Store confirmation status and set component result for flow control
                 self.update_data({"confirmed": False})
+                self.state_manager.set_component_result("cancelled")
+
+                # Send cancellation message
+                self.state_manager.messaging.send_text("Ok, no problem. It's cancelled.")
 
                 # Release input wait
                 self.set_awaiting_input(False)

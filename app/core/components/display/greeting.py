@@ -153,10 +153,6 @@ GREETINGS: List[Tuple[str, str, List[str], float]] = [
 CASUAL_SUFFIXES = [
     # Relationship terms (weighted toward Zim culture)
     "shamwari 🤝🏿",     # Friend (Shona)
-    "bhudi 🫂",         # Brother/friend
-    "mfethu 🤜🏿🤛🏿",    # Brother
-    "mukoma 🙌🏿",      # Elder brother
-    "sisi 💫",         # Sister
     "choms ⭐",        # Friend (slang)
 
     # Casual/Street

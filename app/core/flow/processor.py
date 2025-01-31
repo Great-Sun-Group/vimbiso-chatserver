@@ -188,39 +188,51 @@ class FlowProcessor:
                 logger.info(f"Component result: {result}")
                 logger.info(f"Awaiting input: {self.state_manager.is_awaiting_input()}")
 
-                # Handle component failure by transitioning to login flow
+                # Handle component failure
                 if next_step is None:
                     logger.error(f"Component failed: {context}.{component}")
-                    logger.info("Transitioning to login flow due to component failure")
 
-                    # Clear state and start login flow
-                    channel_type = self.state_manager.get_channel_type()
-                    channel_id = self.state_manager.get_channel_id()
-                    current_message = self.state_manager.get_incoming_message()
+                    # Check if this was a validation error by looking at component_data
+                    component_data = self.state_manager.get_state_value("component_data", {})
+                    validation_result = component_data.get("validation_result")
 
-                    self.state_manager.clear_all_state()
+                    if (isinstance(validation_result, ValidationResult) and not validation_result.valid and validation_result.error and validation_result.error.get("type") == "validation"):
+                        # For validation errors, send error message but stay on current component
+                        logger.info(f"Validation error in {context}.{component}: {validation_result.error.get('message')}")
+                        content = TextContent(body=validation_result.error.get("message", "Validation failed"))
+                        return Message(content=content)
+                    else:
+                        # For non-validation failures, transition to login flow
+                        logger.info("Non-validation failure - transitioning to login flow")
 
-                    # Reinitialize channel
-                    self.state_manager.initialize_channel(
-                        channel_type=channel_type,
-                        channel_id=channel_id
-                    )
+                        # Clear state and start login flow
+                        channel_type = self.state_manager.get_channel_type()
+                        channel_id = self.state_manager.get_channel_id()
+                        current_message = self.state_manager.get_incoming_message()
 
-                    # Restore message
-                    if current_message:
-                        self.state_manager.set_incoming_message(current_message)
+                        self.state_manager.clear_all_state()
 
-                    # Start login flow
-                    self.state_manager.transition_flow(
-                        path="login",
-                        component="Greeting"
-                    )
+                        # Reinitialize channel
+                        self.state_manager.initialize_channel(
+                            channel_type=channel_type,
+                            channel_id=channel_id
+                        )
 
-                    # Update context and component for next iteration
-                    context = "login"
-                    component = "Greeting"
-                    current_state = self.state_manager.get_state_value("component_data")
-                    continue
+                        # Restore message
+                        if current_message:
+                            self.state_manager.set_incoming_message(current_message)
+
+                        # Start login flow
+                        self.state_manager.transition_flow(
+                            path="login",
+                            component="Greeting"
+                        )
+
+                        # Update context and component for next iteration
+                        context = "login"
+                        component = "Greeting"
+                        current_state = self.state_manager.get_state_value("component_data")
+                        continue
 
                 # Handle validation error
                 if isinstance(result, ValidationResult) and not result.valid:

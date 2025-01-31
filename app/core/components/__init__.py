@@ -19,6 +19,7 @@ from .display.processing_now import ProcessingNow
 # Input components
 from .input.welcome import Welcome
 from .input.account_dashboard import AccountDashboard
+from .input.multi_account_dashboard import MultiAccountDashboard
 from .input.offer_list_display import OfferListDisplay
 from .input.view_ledger import ViewLedger
 from .input.amount_input import AmountInput
@@ -53,6 +54,7 @@ __all__ = [
 
     # Input components
     "AccountDashboard",
+    "MultiAccountDashboard",
     "OfferListDisplay",
     "ViewLedger",
     "Welcome",
