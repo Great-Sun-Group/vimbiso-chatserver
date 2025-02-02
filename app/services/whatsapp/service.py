@@ -278,11 +278,13 @@ class WhatsAppMessagingService(BaseMessagingService):
 
         # Get API configuration
         phone_number_id = config("WHATSAPP_PHONE_NUMBER_ID")
-        api_url = config("WHATSAPP_API_URL", default="https://graph.facebook.com/v20.0/")
+        business_id = config("WHATSAPP_BUSINESS_ID")
+        api_url = config("WHATSAPP_API_URL", default="https://graph.facebook.com/v22.0/")
         url = f"{api_url}{phone_number_id}/messages"
         headers = {
             "Authorization": f"Bearer {config('WHATSAPP_ACCESS_TOKEN')}",
             "Content-Type": "application/json",
+            "X-Business-Id": business_id  # Add business ID for v22.0 authentication
         }
 
         try:
