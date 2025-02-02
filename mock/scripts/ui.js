@@ -76,9 +76,20 @@ export class ChatUI {
     }
 
     updateStatus() {
-        const text = this.targetSelect.value === 'local' ?
-            'Local Server (localhost:8000)' :
-            'Development Server (dev.vimbisi-chatserver.vimbisopay.africa)';
+        let text;
+        switch (this.targetSelect.value) {
+            case 'local':
+                text = 'Local Server (localhost:8000)';
+                break;
+            case 'development':
+                text = 'Development Server (dev.vimbiso-chatserver.vimbisopay.africa)';
+                break;
+            case 'production':
+                text = 'Production Server (vimbiso-chatserver.vimbisopay.africa)';
+                break;
+            default:
+                text = 'Unknown Server';
+        }
         this.statusDiv.innerHTML = `Connected to: ${text}`;
         this.statusDiv.className = `status ${this.targetSelect.value}`;
     }

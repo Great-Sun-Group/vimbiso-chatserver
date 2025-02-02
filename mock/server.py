@@ -19,8 +19,12 @@ logger = logging.getLogger(__name__)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("http.server").setLevel(logging.WARNING)
 
-# The actual app endpoint we're testing
-APP_ENDPOINT = 'http://app:8000/bot/webhook'
+# The app endpoints we're testing
+APP_ENDPOINTS = {
+    'local': 'http://app:8000/bot/webhook',
+    'development': 'https://dev-vimbiso-chatserver.dailycredcoin.com/bot/webhook',
+    'production': 'https://vimbiso-chatserver.vimbisopay.africa/bot/webhook'
+}
 
 # Directory to store messages
 MESSAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "messages")
@@ -127,7 +131,7 @@ class MockWhatsAppHandler(SimpleHTTPRequestHandler):
 
         return messages
 
-    def _forward_to_app(self, message):
+    def _forward_to_app(self, message, target='local'):
         """Transform and forward message to app."""
         try:
             # Transform simple message to WhatsApp webhook format
@@ -170,16 +174,20 @@ class MockWhatsAppHandler(SimpleHTTPRequestHandler):
                 }]
             }
 
-            # Add mock testing headers
+            # Set headers based on target
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
                 "X-Mock-Testing": "true"
             }
 
+            # Get endpoint based on target
+            endpoint = APP_ENDPOINTS.get(target, APP_ENDPOINTS['local'])
+            logger.info(f"Forwarding to {target} endpoint: {endpoint}")
+
             # Send request and handle response
             response = requests.post(
-                APP_ENDPOINT,
+                endpoint,
                 json=webhook_message,
                 headers=headers,
                 timeout=30  # Match CLI client timeout
@@ -221,9 +229,19 @@ class MockWhatsAppHandler(SimpleHTTPRequestHandler):
 
                     # Acknowledge receipt immediately and close connection
                     self._send_200({"success": True})
+                    # Get target from query params
+                    target = 'local'
+                    if '?' in self.path:
+                        query_string = self.path.split('?')[1]
+                        logger.info(f"Query string: {query_string}")
+                        query_params = dict(param.split('=') for param in query_string.split('&'))
+                        logger.info(f"Query params: {query_params}")
+                        target = query_params.get('target', 'local')
+                    logger.info(f"Selected target: {target}")
+
                     # Start forwarding to app in a separate thread
                     import threading
-                    threading.Thread(target=self._forward_to_app, args=(message,)).start()
+                    threading.Thread(target=self._forward_to_app, args=(message, target)).start()
                     logger.info("UI -> Server-> app-1 complete: %s", message["message"])
                     return
 

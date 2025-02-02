@@ -130,7 +130,7 @@ Examples:
     )
     parser.add_argument(
         "--target",
-        choices=["local", "development"],
+        choices=["local", "development", "production"],
         default="local",
         help="Target environment (default: local)"
     )
