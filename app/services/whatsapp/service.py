@@ -300,13 +300,65 @@ class WhatsAppMessagingService(BaseMessagingService):
                 "status_code": response.status_code
             }
 
-            # Try to parse response
+            # Try to parse response and validate
             try:
-                message.metadata["response"] = response.json()
-            except Exception:
-                message.metadata["response"] = response.text
+                response_data = response.json()
+                message.metadata["response"] = response_data
 
-            return message
+                # Validate WhatsApp API response format
+                if response.status_code != 200:
+                    logger.error(f"WhatsApp API error response: {response_data}")
+                    raise MessageValidationError(
+                        message="WhatsApp API returned error response",
+                        service="whatsapp",
+                        action="send_message",
+                        validation_details={
+                            "status_code": response.status_code,
+                            "response": response_data
+                        }
+                    )
+
+                # Check for required success indicators
+                if not response_data.get("messaging_product") == "whatsapp":
+                    logger.error(f"Invalid messaging product in response: {response_data}")
+                    raise MessageValidationError(
+                        message="Invalid messaging product in WhatsApp response",
+                        service="whatsapp",
+                        action="send_message",
+                        validation_details={
+                            "response": response_data
+                        }
+                    )
+
+                # Check for message ID indicating successful queuing
+                messages = response_data.get("messages", [])
+                if not messages or not messages[0].get("id"):
+                    logger.error(f"No message ID in response: {response_data}")
+                    raise MessageValidationError(
+                        message="No message ID in WhatsApp response",
+                        service="whatsapp",
+                        action="send_message",
+                        validation_details={
+                            "response": response_data
+                        }
+                    )
+
+                return message
+
+            except MessageValidationError:
+                raise
+            except Exception as e:
+                message.metadata["response"] = response.text
+                logger.error(f"Error parsing WhatsApp response: {str(e)}")
+                raise MessageValidationError(
+                    message=f"Failed to parse WhatsApp response: {str(e)}",
+                    service="whatsapp",
+                    action="send_message",
+                    validation_details={
+                        "status_code": response.status_code,
+                        "response": response.text
+                    }
+                )
 
         except Exception as e:
             # Log error and include in metadata
