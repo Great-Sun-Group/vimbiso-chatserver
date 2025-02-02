@@ -82,12 +82,18 @@ class MultiAccountDashboard(InputComponent):
                         net_assets = account.get("balanceData", {}).get("netCredexAssetsInDefaultDenom", "0.00")
 
                         try:
-                            # Build concise description (under 72 chars)
+                            # Build and validate description length (WhatsApp 72 char limit)
                             description = f"{account_name}: {net_assets}"
+                            if len(description) > 72:
+                                # Truncate to 69 chars + "..."
+                                description = description[:69] + "..."
                         except Exception as e:
                             logger.error(f"Failed to build description: {str(e)}")
-                            # Provide a fallback description
-                            description = f"Type: {account.get('accountType')}"
+                            # Provide a fallback description (ensuring under 72 chars)
+                            account_type = account.get('accountType', '')[:65]  # Leave room for "Type: " + "..."
+                            description = f"Type: {account_type}"
+                            if len(description) > 72:
+                                description = description[:69] + "..."
 
                         account_options.append({
                             "id": account_id,
