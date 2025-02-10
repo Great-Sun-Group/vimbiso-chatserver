@@ -7,7 +7,7 @@ isort==5.13.2
 pytest==8.3.4
 pytest-django==4.9.0
 pytest-cov==6.0.0
-mypy==1.14.1
+mypy==1.15.0
 django-debug-toolbar==5.0.1
 django-browser-reload==1.17.0
 ipython==8.31.0
