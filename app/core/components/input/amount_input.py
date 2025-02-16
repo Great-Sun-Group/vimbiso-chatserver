@@ -10,12 +10,11 @@ from core.error.types import ValidationResult
 from ..base import InputComponent
 
 # Valid denominations
-VALID_DENOMS: Set[str] = {"CXX", "XAU", "USD", "CAD", "ZWG"}
+VALID_DENOMS: Set[str] = {"CXX", "XAU", "USD", "CAD"}
 
 # Amount prompt template
-AMOUNT_PROMPT = """💸 *Offer how much❓*
-✨ Defaults to USD or use
-✨ ZWG 99.99 or 9.99 ZWG"""
+AMOUNT_PROMPT = """💸 *Offer how much USD*❓
+"""
 
 
 class AmountInput(InputComponent):
@@ -79,11 +78,11 @@ class AmountInput(InputComponent):
             elif len(parts) == 2:
                 # Amount and denom in either order
                 if parts[0].replace('.', '', 1).isdigit():
-                    # Format: "99 ZWG"
+                    # Format: "99 XAU"
                     amount = float(parts[0])
                     denom = parts[1].upper()
                 else:
-                    # Format: "ZWG 99"
+                    # Format: "XAU 99"
                     amount = float(parts[1])
                     denom = parts[0].upper()
 

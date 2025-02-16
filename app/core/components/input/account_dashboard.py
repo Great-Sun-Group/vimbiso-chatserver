@@ -95,9 +95,9 @@ class AccountDashboard(InputComponent):
                         # If no denomination in string, use account default
                         net_value = float(net_assets_str)
                         denom = active_account.get("defaultDenom", "USD")
-                    net_assets = f"  {net_value:.2f} {denom}"
+                    net_assets = f"{net_value:.2f} {denom}"
                 except (ValueError, TypeError, AttributeError):
-                    net_assets = f"- 0.00 {active_account.get('defaultDenom', 'USD')}"
+                    net_assets = f"0.00 {active_account.get('defaultDenom', 'USD')}"
 
                 # Format tier limit display
                 member = dashboard.get("member", {})
@@ -114,7 +114,7 @@ class AccountDashboard(InputComponent):
                 pending_out = len(active_account.get("pendingOutData", []))
 
                 # Format pending offer message
-                pending_offer_message = f"\n\n💸 {pending_in} offers to accept" if pending_in > 0 else ""
+                pending_offer_message = f"\n\n💸 {pending_in} offers to accept 💸" if pending_in > 0 else ""
 
                 # Format final display data
                 formatted_data = {
