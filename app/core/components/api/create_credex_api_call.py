@@ -5,13 +5,15 @@ Handles creating a new Credex offer through the API:
 - Creates new Credex offer via API
 - Updates state with schema-validated dashboard data
 """
+from ..base import ApiComponent
 
+import logging
 from typing import Any, Dict
 
 from core.api.base import handle_api_response, make_api_request
 from core.error.types import ValidationResult
 
-from ..base import ApiComponent
+logger = logging.getLogger(__name__)
 
 
 class CreateCredexApiCall(ApiComponent):
@@ -131,14 +133,41 @@ class CreateCredexApiCall(ApiComponent):
         # Get action from state after API call
         action = self.state_manager.get_state_value("action", {})
 
+        # Get action ID from response to check for duplicates
+        action_id = action.get("id")
+        if not action_id:
+            return ValidationResult.failure(
+                message="Missing action ID in response",
+                field="action",
+                details={"error": "missing_action_id"}
+            )
+
+        # Check if this action was already processed
+        processed_actions = self.state_manager.get_state_value("component_data", {}).get("processed_actions", [])
+        if action_id in processed_actions:
+            logger.warning(f"Duplicate credex creation detected for action {action_id}")
+            return ValidationResult.failure(
+                message="Duplicate credex creation detected",
+                field="action",
+                details={"error": "duplicate_action"}
+            )
+
+        # Clear offer data BEFORE sending success message to prevent race condition
+        self.update_data({})
+
+        # Update processed actions list
+        processed_actions.append(action_id)
+        self.state_manager.update_state({
+            "component_data": {
+                "processed_actions": processed_actions[-10:]  # Keep last 10 actions
+            }
+        })
+
         # Send notification based on action type
         if action.get("type") == "CREDEX_CREATED":
             self.state_manager.messaging.send_text("✅ Secured credex offered")
         else:
             self.state_manager.messaging.send_text("❌ Failed to offer secured credex")
-
-        # Clear offer data after creation
-        self.update_data({})
 
         # Tell headquarters to show dashboard
         self.set_result("show_dashboard")

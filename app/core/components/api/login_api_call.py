@@ -3,6 +3,7 @@
 Handles the login flow for both new and existing members:
 - For new users: Sets component_result="start_onboarding"
 - For existing users: Sets component_result="send_dashboard"
+- Handles retries and prevents infinite loops
 """
 
 import logging
@@ -15,6 +16,9 @@ from ..base import ApiComponent
 
 logger = logging.getLogger(__name__)
 
+# Maximum number of login attempts before forcing error state
+MAX_LOGIN_ATTEMPTS = 3
+
 
 class LoginApiCall(ApiComponent):
     """Processes login API calls and manages member state"""
@@ -24,7 +28,31 @@ class LoginApiCall(ApiComponent):
 
     def validate_api_call(self, value: Any) -> ValidationResult:
         """Process login API call and set component_result for flow control"""
+        # Get current login attempts from state
+        component_data = self.state_manager.get_state_value("component_data", {})
+        login_attempts = component_data.get("login_attempts", 0)
+
+        # Check if we've exceeded max attempts
+        if login_attempts >= MAX_LOGIN_ATTEMPTS:
+            logger.error(f"Login failed after {login_attempts} attempts")
+            self.state_manager.messaging.send_text("❌ Unable to process your request. Please try again later.")
+            # Force error state to break the loop
+            self.set_result("error")
+            return ValidationResult.failure(
+                message=f"Login failed after {login_attempts} attempts",
+                field="login_attempts",
+                details={"error": "max_attempts_exceeded"}
+            )
+
         try:
+            # Increment attempt counter
+            login_attempts += 1
+            self.state_manager.update_state({
+                "component_data": {
+                    "login_attempts": login_attempts
+                }
+            })
+
             # Get channel info
             channel = self.state_manager.get_state_value("channel")
             if not channel or not channel.get("identifier"):
@@ -51,11 +79,31 @@ class LoginApiCall(ApiComponent):
                 state_manager=self.state_manager
             )
             if error:
+                logger.error(f"Login API error: {error}")
+                # Show error message and force dashboard state to break loop
+                if login_attempts >= MAX_LOGIN_ATTEMPTS:
+                    self.state_manager.messaging.send_text("❌ Unable to process your request. Please try again later.")
+                    # Force dashboard state to break the loop
+                    self.set_result("send_dashboard")
+                    # Clear any stale state
+                    self.state_manager.update_state({
+                        "component_data": {
+                            "login_attempts": 0
+                        }
+                    })
                 return ValidationResult.failure(
                     message=f"Login failed: {error}",
                     field="api_call",
-                    details={"error": error}
+                    details={"error": error, "attempts": login_attempts}
                 )
+
+            # Reset attempt counter and clear any stale state on successful API call
+            self.state_manager.update_state({
+                "component_data": {
+                    "login_attempts": 0,
+                    "data": {}  # Clear any stale data
+                }
+            })
 
             # Check action state to determine flow
             action = self.state_manager.get_state_value("action", {})
