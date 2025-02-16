@@ -114,7 +114,7 @@ class AccountDashboard(InputComponent):
                 pending_out = len(active_account.get("pendingOutData", []))
 
                 # Format pending offer message
-                pending_offer_message = f"\n\n💸 {pending_in} offers to accept" if pending_in > 0 else ""
+                pending_offer_message = f"\n\n💸 {pending_in} offers to accept 💸" if pending_in > 0 else ""
 
                 # Format final display data
                 formatted_data = {

@@ -14,7 +14,7 @@ Secure credex ecosystem account and transaction management via WhatsApp and SMS.
 - View account ledgers with pagination
 
 #### Credex Operations
-- Offer secured credex in CXX, XAU, USD, CAD, ZWG
+- Offer secured credex in CXX, XAU, USD, CAD
 - Accept/decline/cancel credex offers
 - View credex details
 
