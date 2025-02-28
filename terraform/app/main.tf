@@ -84,9 +84,9 @@ resource "aws_ecs_task_definition" "app" {
         { name = "WHATSAPP_BUSINESS_ID", value = var.whatsapp_business_id },
         { name = "REDIS_URL", value = "redis://localhost:6379/0" },
         { name = "ALLOWED_HOSTS", value = "*" },  # Allow all hosts since behind ALB
-        { name = "DEBUG", value = "false" },
-        { name = "APP_LOG_LEVEL", value = "INFO" },
-        { name = "DJANGO_LOG_LEVEL", value = "INFO" }
+        { name = "DEBUG", value = var.environment == "development" ? "true" : "false" },
+        { name = "APP_LOG_LEVEL", value = var.environment == "development" ? "DEBUG" : "INFO" },
+        { name = "DJANGO_LOG_LEVEL", value = var.environment == "development" ? "DEBUG" : "INFO" }
       ]
       portMappings = [
         {
