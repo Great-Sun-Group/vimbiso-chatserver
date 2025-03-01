@@ -168,7 +168,8 @@ def make_api_request(
     payload: Dict[str, Any],
     method: str = "POST",
     retry_auth: bool = True,
-    state_manager: Optional[StateManagerInterface] = None
+    state_manager: Optional[StateManagerInterface] = None,
+    idempotency_key: Optional[str] = None
 ) -> Union[requests.Response, Dict[str, Any]]:
     """Make API request with logging, validation and error handling"""
     try:
@@ -188,6 +189,11 @@ def make_api_request(
 
         # Get headers with auth if needed
         headers = get_headers(state_manager, url) if state_manager else {}
+
+        # Add idempotency key to headers if provided
+        if idempotency_key:
+            headers["X-Idempotency-Key"] = idempotency_key
+            logger.info(f"Using idempotency key: {idempotency_key}")
 
         # Validate request parameters
         validation = validate_request_params(url, headers, payload)
