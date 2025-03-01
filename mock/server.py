@@ -26,6 +26,9 @@ APP_ENDPOINTS = {
     'production': 'https://vimbiso-chatserver.vimbisopay.africa/bot/webhook'
 }
 
+# Mock testing key for security
+MOCK_TEST_KEY = os.environ.get('MOCK_TEST_KEY', 'default_mock_key')
+
 # Directory to store messages
 MESSAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "messages")
 
@@ -178,7 +181,7 @@ class MockWhatsAppHandler(SimpleHTTPRequestHandler):
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "X-Mock-Testing": "true"
+                "X-Mock-Testing": MOCK_TEST_KEY
             }
 
             # Get endpoint based on target
