@@ -32,13 +32,31 @@ def safe_float_parse(value_str):
     clean_str = ''.join(value_str.split())
     logger.debug(f"After whitespace removal: '{clean_str}'")
 
-    # Replace commas with periods (for European formatting)
-    clean_str = clean_str.replace(',', '.')
-    logger.debug(f"After comma replacement: '{clean_str}'")
+    # Handle number formats with different thousand/decimal separators
+    if ',' in clean_str and '.' in clean_str:
+        # If both comma and period exist, the last one is likely the decimal separator
+        last_comma_pos = clean_str.rfind(',')
+        last_period_pos = clean_str.rfind('.')
+
+        if last_comma_pos > last_period_pos:
+            # Format like "1.000,00" (European)
+            clean_str = clean_str.replace('.', '')  # Remove thousand separators
+            clean_str = clean_str.replace(',', '.')  # Convert decimal separator to period
+        else:
+            # Format like "1,000.00" (American/English)
+            clean_str = clean_str.replace(',', '')  # Remove thousand separators
+    elif ',' in clean_str:
+        # Only commas - check position to determine if thousand or decimal separator
+        if clean_str.rfind(',') > len(clean_str) - 4:
+            # Comma is likely a decimal separator (e.g., "1000,00")
+            clean_str = clean_str.replace(',', '.')
+        else:
+            # Comma is likely a thousand separator (e.g., "1,000")
+            clean_str = clean_str.replace(',', '')
 
     # Strip any currency symbols or other non-numeric chars except period
     clean_str = ''.join(c for c in clean_str if c.isdigit() or c == '.')
-    logger.debug(f"After non-numeric char removal: '{clean_str}'")
+    logger.debug(f"After format handling: '{clean_str}'")
 
     try:
         result = float(clean_str)
