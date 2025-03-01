@@ -94,7 +94,9 @@ def get_next_component(
         case ("offer_secured", "ProcessingNow"):
             return "offer_secured", "CreateCredexApiCall"  # Create offer
         case ("offer_secured", "CreateCredexApiCall"):
-            return "account", "AccountDashboard"  # Return to account dashboard (success/fail message passed in state for dashboard display)
+            if component_result == "show_dashboard":
+                return "account", "AccountDashboard"  # Return to account dashboard after showing error/success message
+            return "account", "AccountDashboard"  # Default to dashboard for any other result
 
         # Upgrade member tier path
         case ("upgrade_membertier", "ConfirmUpgrade"):

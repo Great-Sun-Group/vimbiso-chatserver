@@ -35,7 +35,7 @@ class WhatsAppMock {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-Mock-Testing': 'true'
+                    'X-Mock-Testing': 'mock_test_secret'  // Should match MOCK_TEST_KEY in server.py
                 },
                 body: JSON.stringify(payload)
             });

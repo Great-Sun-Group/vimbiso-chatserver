@@ -289,6 +289,92 @@ class StateManager(StateManagerInterface):  # type: ignore
                 action="is_mock_testing"
             )
 
+    # Transaction tracking methods
+
+    def start_transaction(self, transaction_type: str, data: Dict[str, Any]) -> str:
+        """Start a new transaction with unique ID"""
+        try:
+            return self._core.start_transaction(transaction_type, data)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to start transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="start_transaction"
+            )
+
+    def update_transaction(self, transaction_id: str, status: str, result: Dict[str, Any] = None) -> None:
+        """Update transaction status"""
+        try:
+            self._core.update_transaction(transaction_id, status, result)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to update transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="update_transaction"
+            )
+
+    def complete_transaction(self, transaction_id: str, result: Dict[str, Any] = None) -> None:
+        """Mark transaction as completed"""
+        try:
+            self._core.complete_transaction(transaction_id, result)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to complete transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="complete_transaction"
+            )
+
+    def fail_transaction(self, transaction_id: str, error: str) -> None:
+        """Mark transaction as failed"""
+        try:
+            self._core.fail_transaction(transaction_id, error)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to fail transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="fail_transaction"
+            )
+
+    def get_transaction(self, transaction_id: str) -> Optional[Dict[str, Any]]:
+        """Get transaction by ID"""
+        try:
+            return self._core.get_transaction(transaction_id)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to get transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="get_transaction"
+            )
+
+    def find_similar_transaction(self, transaction_type: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Find a similar transaction by type and data"""
+        try:
+            return self._core.find_similar_transaction(transaction_type, data)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to find similar transaction: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="find_similar_transaction"
+            )
+
+    def is_transaction_completed(self, transaction_type: str, data: Dict[str, Any]) -> bool:
+        """Check if a similar transaction has been completed"""
+        try:
+            return self._core.is_transaction_completed(transaction_type, data)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to check if transaction is completed: {str(e)}",
+                code="TRANSACTION_ERROR",
+                service="whatsapp_state",
+                action="is_transaction_completed"
+            )
+
     def get_incoming_message(self) -> Optional[Dict[str, Any]]:
         """Get current incoming message if it exists"""
         try:
