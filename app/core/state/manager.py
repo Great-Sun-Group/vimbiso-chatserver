@@ -7,9 +7,12 @@ This module implements the StateManagerInterface with:
 - Minimal nesting
 """
 
+import hashlib
+import json
 import logging
+import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from core.error.exceptions import ComponentException
 from core.error.handler import ErrorHandler
@@ -546,3 +549,155 @@ class StateManager(StateManagerInterface):
     def is_mock_testing(self) -> bool:
         """Check if mock testing mode is enabled for this request"""
         return bool(self.get_state_value("mock_testing"))
+
+    # Transaction tracking methods
+
+    def start_transaction(self, transaction_type: str, data: Dict[str, Any]) -> str:
+        """Start a new transaction with unique ID
+
+        Args:
+            transaction_type: Type of transaction (e.g., "create_credex")
+            data: Transaction data
+
+        Returns:
+            str: Unique transaction ID
+        """
+        # Generate unique transaction ID
+        transaction_id = f"{transaction_type}_{uuid.uuid4()}"
+
+        # Generate data hash for lookups
+        data_hash = hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
+        # Store transaction in Redis with PENDING status
+        transaction_data = {
+            "id": transaction_id,
+            "type": transaction_type,
+            "status": "PENDING",
+            "data": data,
+            "data_hash": data_hash,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+            "channel_id": self.get_channel_id()
+        }
+
+        # Store in Redis with TTL
+        key = f"transaction:{transaction_id}"
+        self.atomic_state.atomic_update(key, transaction_data, ttl=3600)  # 1 hour TTL
+
+        # Also store in a set of recent transactions by type
+        type_key = f"transactions:{transaction_type}"
+        self.atomic_state.storage.redis.sadd(type_key, transaction_id)
+        self.atomic_state.storage.redis.expire(type_key, 3600)  # 1 hour TTL
+
+        return transaction_id
+
+    def update_transaction(self, transaction_id: str, status: str, result: Dict[str, Any] = None) -> None:
+        """Update transaction status
+
+        Args:
+            transaction_id: Transaction ID
+            status: New status ("PENDING", "COMPLETED", "FAILED")
+            result: Optional result data
+        """
+        key = f"transaction:{transaction_id}"
+
+        # Get current transaction data
+        transaction_data = self.atomic_state.atomic_get(key)
+        if not transaction_data:
+            logger.warning(f"Transaction not found: {transaction_id}")
+            return
+
+        # Update status and result
+        transaction_data["status"] = status
+        transaction_data["updated_at"] = datetime.utcnow().isoformat()
+        if result:
+            transaction_data["result"] = result
+
+        # Update in Redis
+        self.atomic_state.atomic_update(key, transaction_data, ttl=3600)  # 1 hour TTL
+
+    def complete_transaction(self, transaction_id: str, result: Dict[str, Any] = None) -> None:
+        """Mark transaction as completed
+
+        Args:
+            transaction_id: Transaction ID
+            result: Optional result data
+        """
+        self.update_transaction(transaction_id, "COMPLETED", result)
+
+    def fail_transaction(self, transaction_id: str, error: str) -> None:
+        """Mark transaction as failed
+
+        Args:
+            transaction_id: Transaction ID
+            error: Error message
+        """
+        self.update_transaction(transaction_id, "FAILED", {"error": error})
+
+    def get_transaction(self, transaction_id: str) -> Optional[Dict[str, Any]]:
+        """Get transaction by ID
+
+        Args:
+            transaction_id: Transaction ID
+
+        Returns:
+            Optional[Dict[str, Any]]: Transaction data if found
+        """
+        key = f"transaction:{transaction_id}"
+        return self.atomic_state.atomic_get(key)
+
+    def _get_recent_transactions(self, transaction_type: str) -> List[Dict[str, Any]]:
+        """Get recent transactions of a specific type
+
+        Args:
+            transaction_type: Type of transaction
+
+        Returns:
+            List[Dict[str, Any]]: List of transaction data
+        """
+        type_key = f"transactions:{transaction_type}"
+        transaction_ids = self.atomic_state.storage.redis.smembers(type_key)
+
+        transactions = []
+        for transaction_id in transaction_ids:
+            transaction_data = self.get_transaction(transaction_id.decode('utf-8'))
+            if transaction_data:
+                transactions.append(transaction_data)
+
+        return transactions
+
+    def find_similar_transaction(self, transaction_type: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Find a similar transaction by type and data
+
+        Args:
+            transaction_type: Type of transaction
+            data: Transaction data
+
+        Returns:
+            Optional[Dict[str, Any]]: Similar transaction if found
+        """
+        # Generate data hash
+        data_hash = hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
+        # Get recent transactions
+        transactions = self._get_recent_transactions(transaction_type)
+
+        # Find matching transaction
+        for transaction in transactions:
+            if transaction.get("data_hash") == data_hash:
+                return transaction
+
+        return None
+
+    def is_transaction_completed(self, transaction_type: str, data: Dict[str, Any]) -> bool:
+        """Check if a similar transaction has been completed
+
+        Args:
+            transaction_type: Type of transaction
+            data: Transaction data
+
+        Returns:
+            bool: True if a similar transaction has been completed
+        """
+        transaction = self.find_similar_transaction(transaction_type, data)
+        return transaction is not None and transaction.get("status") == "COMPLETED"

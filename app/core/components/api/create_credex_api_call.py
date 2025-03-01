@@ -28,10 +28,11 @@ class CreateCredexApiCall(ApiComponent):
         self.state_manager = state_manager
 
     def validate_api_call(self, value: Any) -> ValidationResult:
-        """Process offer creation and update state
+        """Process offer creation and update state with transaction tracking
 
         - Gets offer data (amount, handle) from flow state
-        - Creates new Credex offer via API
+        - Checks if a similar transaction has already been completed
+        - Creates new Credex offer via API with idempotency key
         - Updates state with dashboard data via handle_api_response
         - Returns success status
         """
@@ -97,85 +98,113 @@ class CreateCredexApiCall(ApiComponent):
                 details={"component": self.type}
             )
 
-        # Make API call
-        url = "createCredex"
-        payload = {
-            "receiverAccountID": recipient_account["accountID"],
-            "issuerAccountID": active_account_id,
-            "Denomination": offer_data.get("denom"),
-            "InitialAmount": amount,
-            "credexType": "PURCHASE",
-            "OFFERSorREQUESTS": "OFFERS",
-            "securedCredex": True,
+        # Create transaction data for deduplication
+        transaction_data = {
+            "amount": amount,
+            "denom": denom,
+            "issuer_account_id": active_account_id,
+            "receiver_account_id": recipient_account.get("accountID"),
+            "member_id": member_id,
+            "credex_type": "PURCHASE",
+            "offers_or_requests": "OFFERS",
+            "secured_credex": True
         }
 
-        # Make request and store response
-        response = make_api_request(
-            url=url,
-            payload=payload,
-            state_manager=self.state_manager
-        )
+        # Check if this transaction has already been processed
+        if self.state_manager.is_transaction_completed("create_credex", transaction_data):
+            self.state_manager.messaging.send_text("✅ Secured credex already offered")
+            self.update_data({})
+            self.set_result("show_dashboard")
+            return ValidationResult.success({
+                "status": "success",
+                "action": {"type": "CREDEX_CREATED"}
+            })
 
-        # Store response data in state
-        response_data, error = handle_api_response(
-            response=response,
-            state_manager=self.state_manager
-        )
+        # Start a new transaction
+        transaction_id = self.state_manager.start_transaction("create_credex", transaction_data)
 
-        # Validate response has required data
-        if not response_data.get("data", {}).get("action", {}).get("type") == "CREDEX_CREATED":
-            return ValidationResult.failure(
-                message="Credex creation failed: Invalid response data",
-                field="api_call",
-                details={"error": error or "Unexpected action type"}
-            )
-
-        # Get action from state after API call
-        action = self.state_manager.get_state_value("action", {})
-
-        # Get action ID from response to check for duplicates
-        action_id = action.get("id")
-        if not action_id:
-            return ValidationResult.failure(
-                message="Missing action ID in response",
-                field="action",
-                details={"error": "missing_action_id"}
-            )
-
-        # Check if this action was already processed
-        processed_actions = self.state_manager.get_state_value("component_data", {}).get("processed_actions", [])
-        if action_id in processed_actions:
-            logger.warning(f"Duplicate credex creation detected for action {action_id}")
-            return ValidationResult.failure(
-                message="Duplicate credex creation detected",
-                field="action",
-                details={"error": "duplicate_action"}
-            )
-
-        # Clear offer data BEFORE sending success message to prevent race condition
-        self.update_data({})
-
-        # Update processed actions list
-        processed_actions.append(action_id)
-        self.state_manager.update_state({
-            "component_data": {
-                "processed_actions": processed_actions[-10:]  # Keep last 10 actions
+        try:
+            # Make API call
+            url = "createCredex"
+            payload = {
+                "receiverAccountID": recipient_account["accountID"],
+                "issuerAccountID": active_account_id,
+                "Denomination": offer_data.get("denom"),
+                "InitialAmount": amount,
+                "credexType": "PURCHASE",
+                "OFFERSorREQUESTS": "OFFERS",
+                "securedCredex": True,
             }
-        })
 
-        # Send notification based on action type
-        if action.get("type") == "CREDEX_CREATED":
+            # Make request with idempotency key and store response
+            response = make_api_request(
+                url=url,
+                payload=payload,
+                state_manager=self.state_manager,
+                idempotency_key=transaction_id
+            )
+
+            # Store response data in state
+            response_data, error = handle_api_response(
+                response=response,
+                state_manager=self.state_manager
+            )
+
+            # Handle 403 error specifically
+            if response.status_code == 403:
+                error_message = response_data.get("message", "Failed to offer secured credex")
+                self.state_manager.messaging.send_text(f"❌ {error_message}")
+                self.update_data({})
+                self.set_result("show_dashboard")
+
+                # Mark transaction as failed
+                self.state_manager.fail_transaction(transaction_id, error_message)
+
+                return ValidationResult.success({
+                    "status": "error",
+                    "action": {"type": "ERROR_UNAUTHORIZED"}
+                })
+
+            # Validate response has required data
+            if not response_data.get("data", {}).get("action", {}).get("type") == "CREDEX_CREATED":
+                error_message = error or "Failed to offer secured credex"
+                self.state_manager.messaging.send_text(f"❌ {error_message}")
+                self.update_data({})
+                self.set_result("show_dashboard")
+
+                # Mark transaction as failed
+                self.state_manager.fail_transaction(transaction_id, error_message)
+
+                return ValidationResult.success({
+                    "status": "error",
+                    "action": {"type": "ERROR_FAILED"}
+                })
+
+            # Success case
             self.state_manager.messaging.send_text("✅ Secured credex offered")
-        else:
-            self.state_manager.messaging.send_text("❌ Failed to offer secured credex")
 
-        # Tell headquarters to show dashboard
-        self.set_result("show_dashboard")
+            # Clear offer data after creation
+            self.update_data({})
 
-        return ValidationResult.success({
-            "status": "success" if action.get("type") == "CREDEX_CREATED" else "error",
-            "action": action
-        })
+            # Tell headquarters to show dashboard
+            self.set_result("show_dashboard")
+
+            # Mark transaction as completed
+            self.state_manager.complete_transaction(transaction_id, {
+                "status": "success",
+                "action": response_data.get("data", {}).get("action", {})
+            })
+
+            return ValidationResult.success({
+                "status": "success" if action.get("type") == "CREDEX_CREATED" else "error",
+                "action": action
+            })
+
+        except Exception as e:
+            # Mark transaction as failed
+            self.state_manager.fail_transaction(transaction_id, str(e))
+            # Re-raise the exception
+            raise
 
     def to_verified_data(self, value: Any) -> Dict:
         """Convert API response to verified data
