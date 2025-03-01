@@ -375,6 +375,32 @@ class StateManager(StateManagerInterface):  # type: ignore
                 action="is_transaction_completed"
             )
 
+    # Message tracking methods
+
+    def is_message_processed(self, message_id: str) -> bool:
+        """Check if a message has already been processed"""
+        try:
+            return self._core.is_message_processed(message_id)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to check if message is processed: {str(e)}",
+                code="MESSAGE_TRACKING_ERROR",
+                service="whatsapp_state",
+                action="is_message_processed"
+            )
+
+    def mark_message_processed(self, message_id: str) -> None:
+        """Mark a message as processed"""
+        try:
+            self._core.mark_message_processed(message_id)
+        except Exception as e:
+            raise SystemException(
+                message=f"Failed to mark message as processed: {str(e)}",
+                code="MESSAGE_TRACKING_ERROR",
+                service="whatsapp_state",
+                action="mark_message_processed"
+            )
+
     def get_incoming_message(self) -> Optional[Dict[str, Any]]:
         """Get current incoming message if it exists"""
         try:
