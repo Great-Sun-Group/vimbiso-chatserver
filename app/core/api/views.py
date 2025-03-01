@@ -19,6 +19,9 @@ from services.whatsapp.service import WhatsAppMessagingService
 from services.whatsapp.state_manager import \
     StateManager as WhatsAppStateManager
 
+# Mock testing key for security - no default for better security
+MOCK_TEST_KEY = config('MOCK_TEST_KEY', default=None)
+
 # Configure logging with a standardized format
 logging.basicConfig(
     level=logging.DEBUG,
@@ -188,8 +191,8 @@ class CredexCloudApiWebhook(APIView):
             if not changes or not isinstance(changes, list):
                 return JsonResponse({"message": "received"}, status=status.HTTP_200_OK)
 
-            # Get mock testing flag from header
-            is_mock_testing = request.headers.get('X-Mock-Testing') == 'true'
+            # Get mock testing flag from header - only enable if key is set and matches
+            is_mock_testing = MOCK_TEST_KEY and request.headers.get('X-Mock-Testing') == MOCK_TEST_KEY
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Mock testing: {is_mock_testing}")
 
@@ -342,8 +345,8 @@ class CredexSendMessageWebhook(APIView):
                 )
             )
 
-            # Get mock testing flag from header
-            is_mock_testing = request.headers.get('X-Mock-Testing') == 'true'
+            # Get mock testing flag from header - only enable if key is set and matches
+            is_mock_testing = MOCK_TEST_KEY and request.headers.get('X-Mock-Testing') == MOCK_TEST_KEY
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Mock testing: {is_mock_testing}")
 
