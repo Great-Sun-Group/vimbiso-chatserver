@@ -701,3 +701,32 @@ class StateManager(StateManagerInterface):
         """
         transaction = self.find_similar_transaction(transaction_type, data)
         return transaction is not None and transaction.get("status") == "COMPLETED"
+
+    # Message tracking methods
+
+    def is_message_processed(self, message_id: str) -> bool:
+        """Check if a message has already been processed
+
+        Args:
+            message_id: Unique message identifier
+
+        Returns:
+            bool: True if the message has already been processed
+        """
+        if not message_id:
+            return False
+
+        key = f"processed_message:{message_id}"
+        return bool(self.atomic_state.atomic_get(key))
+
+    def mark_message_processed(self, message_id: str) -> None:
+        """Mark a message as processed
+
+        Args:
+            message_id: Unique message identifier
+        """
+        if not message_id:
+            return
+
+        key = f"processed_message:{message_id}"
+        self.atomic_state.atomic_update(key, {"processed": True}, ttl=86400)  # 24 hour TTL

@@ -120,8 +120,21 @@ class CreateCredexApiCall(ApiComponent):
                 "action": {"type": "CREDEX_CREATED"}
             })
 
-        # Start a new transaction
-        transaction_id = self.state_manager.start_transaction("create_credex", transaction_data)
+        # Get message ID for consistent idempotency key
+        message_id = None
+        incoming_message = self.state_manager.get_incoming_message()
+        if incoming_message and isinstance(incoming_message, dict):
+            message_id = incoming_message.get("id")
+
+        # Create a consistent idempotency key based on message ID if available
+        if message_id:
+            # Use message ID for consistent idempotency key
+            transaction_id = f"create_credex_{message_id}"
+            logger.info(f"Using message-based idempotency key: {transaction_id}")
+        else:
+            # Fall back to random UUID if no message ID
+            transaction_id = self.state_manager.start_transaction("create_credex", transaction_data)
+            logger.info(f"Using transaction-based idempotency key: {transaction_id}")
 
         try:
             # Make API call
