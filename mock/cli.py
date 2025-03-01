@@ -2,11 +2,15 @@
 """Mock WhatsApp CLI client."""
 import argparse
 import json
+import os
 import sys
 import time
 from urllib.parse import urlencode
 
 import requests
+
+# Mock testing key for security - should match server.py
+MOCK_TEST_KEY = os.environ.get('MOCK_TEST_KEY', 'mock_test_secret')
 
 
 def send_message(args: argparse.Namespace) -> None:
@@ -24,7 +28,7 @@ def send_message(args: argparse.Namespace) -> None:
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "X-Mock-Testing": "true"
+        "X-Mock-Testing": MOCK_TEST_KEY
     }
 
     try:
