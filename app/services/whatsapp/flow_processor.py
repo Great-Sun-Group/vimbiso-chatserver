@@ -87,6 +87,16 @@ class WhatsAppFlowProcessor(FlowProcessor):
                 "mock_testing": bool(value.get("metadata", {}).get("mock_testing", False))
             }
 
+            # Check if message has already been processed
+            message_id = message.get("id")
+            if message_id and self.state_manager.is_message_processed(message_id):
+                logger.info(f"Skipping already processed message: {message_id}")
+                return {}
+
+            # Mark message as processed to prevent duplicate processing
+            if message_id:
+                self.state_manager.mark_message_processed(message_id)
+
             # Extract message content
             message_type = message.get("type")
             if message_type == "text":
@@ -98,7 +108,8 @@ class WhatsAppFlowProcessor(FlowProcessor):
                         "type": MessageType.TEXT.value,
                         "text": {
                             "body": text_content.get("body", "")
-                        }
+                        },
+                        "id": message_id
                     }
                 }
 
@@ -118,7 +129,8 @@ class WhatsAppFlowProcessor(FlowProcessor):
                                     "title": button.get("title"),
                                     "type": "reply"
                                 }
-                            }
+                            },
+                            "id": message_id
                         }
                     }
 
@@ -135,7 +147,8 @@ class WhatsAppFlowProcessor(FlowProcessor):
                                     "title": list_reply.get("title"),
                                     "description": list_reply.get("description")
                                 }
-                            }
+                            },
+                            "id": message_id
                         }
                     }
 
