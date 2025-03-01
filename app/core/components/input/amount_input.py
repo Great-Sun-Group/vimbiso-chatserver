@@ -26,17 +26,12 @@ def safe_float_parse(value_str):
         logger.warning(f"Cannot parse non-string value: {value_str}")
         return None
 
-    # Log original value for debugging
-    logger.info(f"Parsing number value: '{value_str}'")
-
     # Remove any non-breaking spaces or other whitespace
     clean_str = ''.join(value_str.split())
     # Replace commas with periods (for European formatting)
     clean_str = clean_str.replace(',', '.')
     # Strip any currency symbols or other non-numeric chars except period
     clean_str = ''.join(c for c in clean_str if c.isdigit() or c == '.')
-
-    logger.info(f"Cleaned number string: '{clean_str}'")
 
     try:
         return float(clean_str)
@@ -75,7 +70,6 @@ class AmountInput(InputComponent):
             return ValidationResult.success(None)
 
         # Get text from message
-        logger.info(f"AmountInput processing message: type={type(incoming_message)}")
         if not isinstance(incoming_message, dict):
             logger.warning(f"Incoming message is not a dictionary: {incoming_message}")
             self.state_manager.messaging.send_text(
@@ -86,15 +80,7 @@ class AmountInput(InputComponent):
             )
             return ValidationResult.success(None)
 
-        # Log message structure for debugging
-        logger.info(f"Message structure: keys={list(incoming_message.keys())}")
-        if "text" in incoming_message:
-            logger.info(f"Text structure: type={type(incoming_message['text'])}")
-            if isinstance(incoming_message['text'], dict):
-                logger.info(f"Text dict keys: {list(incoming_message['text'].keys())}")
-
         text = incoming_message.get("text", {}).get("body", "")
-        logger.info(f"Extracted text for processing: '{text}'")
 
         if not text:
             logger.warning("No text extracted from message")
@@ -109,7 +95,6 @@ class AmountInput(InputComponent):
         try:
             # Split input into parts
             parts = text.strip().split()
-            logger.info(f"Split text into parts: {parts}")
 
             # Handle different input formats
             if len(parts) == 1:
@@ -125,19 +110,16 @@ class AmountInput(InputComponent):
                     )
                     return ValidationResult.success(None)
                 denom = "USD"
-                logger.info(f"Parsed single part as amount={amount}, denom={denom}")
             elif len(parts) == 2:
                 # Amount and denom in either order
                 if parts[0].replace('.', '', 1).replace(',', '', 1).isdigit():
                     # Format: "99 XAU"
                     amount = safe_float_parse(parts[0])
                     denom = parts[1].upper()
-                    logger.info(f"Parsed as 'amount denom' format: {amount} {denom}")
                 else:
                     # Format: "XAU 99"
                     amount = safe_float_parse(parts[1])
                     denom = parts[0].upper()
-                    logger.info(f"Parsed as 'denom amount' format: {denom} {amount}")
 
                 # Check if parsing failed
                 if amount is None:
@@ -227,8 +209,20 @@ class AmountInput(InputComponent):
                 )
 
                 if matching_balance:
-                    # Extract amount from balance string (e.g. "99.99 USD")
-                    available = float(matching_balance.split()[0])
+                    # Extract amount from balance string (e.g. "99.99 USD" or "2,000.00 USD")
+                    balance_amount_str = matching_balance.split()[0]
+                    available = safe_float_parse(balance_amount_str)
+
+                    if available is None:
+                        logger.error(f"Failed to parse balance amount: {balance_amount_str}")
+                        self.state_manager.messaging.send_text(
+                            text="Error processing your balance. Please contact support."
+                        )
+                        self.state_manager.messaging.send_text(
+                            text=AMOUNT_PROMPT
+                        )
+                        return ValidationResult.success(None)
+
                     if amount > available:
                         self.state_manager.messaging.send_text(
                             text=f"Insufficient balance. You have {matching_balance} available."
