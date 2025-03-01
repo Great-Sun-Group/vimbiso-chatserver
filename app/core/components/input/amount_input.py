@@ -3,19 +3,41 @@
 This component handles amount input with proper validation and balance checking.
 """
 
+import logging
 from typing import Any, Dict, Set
 
 from core.error.types import ValidationResult
 
 from ..base import InputComponent
 
+logger = logging.getLogger(__name__)
+
 # Valid denominations
-VALID_DENOMS: Set[str] = {"CXX", "XAU", "USD", "CAD", "ZWG"}
+VALID_DENOMS: Set[str] = {"CXX", "XAU", "USD", "CAD"}
 
 # Amount prompt template
-AMOUNT_PROMPT = """💸 *Offer how much❓*
-✨ Defaults to USD or use
-✨ ZWG 99.99 or 9.99 ZWG"""
+AMOUNT_PROMPT = """💸 *Offer how much USD*❓
+"""
+
+
+def safe_float_parse(value_str):
+    """Parse float values safely handling different regional formats"""
+    if not value_str or not isinstance(value_str, str):
+        logger.warning(f"Cannot parse non-string value: {value_str}")
+        return None
+
+    # Remove any non-breaking spaces or other whitespace
+    clean_str = ''.join(value_str.split())
+    # Replace commas with periods (for European formatting)
+    clean_str = clean_str.replace(',', '.')
+    # Strip any currency symbols or other non-numeric chars except period
+    clean_str = ''.join(c for c in clean_str if c.isdigit() or c == '.')
+
+    try:
+        return float(clean_str)
+    except ValueError as e:
+        logger.warning(f"Failed to parse number: {e}")
+        return None
 
 
 class AmountInput(InputComponent):
@@ -49,6 +71,7 @@ class AmountInput(InputComponent):
 
         # Get text from message
         if not isinstance(incoming_message, dict):
+            logger.warning(f"Incoming message is not a dictionary: {incoming_message}")
             self.state_manager.messaging.send_text(
                 text="Sorry, that doesn't look like an amount to me"
             )
@@ -58,7 +81,9 @@ class AmountInput(InputComponent):
             return ValidationResult.success(None)
 
         text = incoming_message.get("text", {}).get("body", "")
+
         if not text:
+            logger.warning("No text extracted from message")
             self.state_manager.messaging.send_text(
                 text="Sorry, that doesn't look like an amount to me"
             )
@@ -74,18 +99,38 @@ class AmountInput(InputComponent):
             # Handle different input formats
             if len(parts) == 1:
                 # Just amount - default to USD
-                amount = float(parts[0])
+                amount = safe_float_parse(parts[0])
+                if amount is None:
+                    logger.warning(f"Failed to parse single part as amount: {parts[0]}")
+                    self.state_manager.messaging.send_text(
+                        text="Sorry, that doesn't look like an amount to me"
+                    )
+                    self.state_manager.messaging.send_text(
+                        text=AMOUNT_PROMPT
+                    )
+                    return ValidationResult.success(None)
                 denom = "USD"
             elif len(parts) == 2:
                 # Amount and denom in either order
-                if parts[0].replace('.', '', 1).isdigit():
-                    # Format: "99 ZWG"
-                    amount = float(parts[0])
+                if parts[0].replace('.', '', 1).replace(',', '', 1).isdigit():
+                    # Format: "99 XAU"
+                    amount = safe_float_parse(parts[0])
                     denom = parts[1].upper()
                 else:
-                    # Format: "ZWG 99"
-                    amount = float(parts[1])
+                    # Format: "XAU 99"
+                    amount = safe_float_parse(parts[1])
                     denom = parts[0].upper()
+
+                # Check if parsing failed
+                if amount is None:
+                    logger.warning(f"Failed to parse amount from parts: {parts}")
+                    self.state_manager.messaging.send_text(
+                        text="Sorry, that doesn't look like an amount to me"
+                    )
+                    self.state_manager.messaging.send_text(
+                        text=AMOUNT_PROMPT
+                    )
+                    return ValidationResult.success(None)
 
                 # Validate denomination
                 if denom not in VALID_DENOMS:
@@ -164,8 +209,20 @@ class AmountInput(InputComponent):
                 )
 
                 if matching_balance:
-                    # Extract amount from balance string (e.g. "99.99 USD")
-                    available = float(matching_balance.split()[0])
+                    # Extract amount from balance string (e.g. "99.99 USD" or "2,000.00 USD")
+                    balance_amount_str = matching_balance.split()[0]
+                    available = safe_float_parse(balance_amount_str)
+
+                    if available is None:
+                        logger.error(f"Failed to parse balance amount: {balance_amount_str}")
+                        self.state_manager.messaging.send_text(
+                            text="Error processing your balance. Please contact support."
+                        )
+                        self.state_manager.messaging.send_text(
+                            text=AMOUNT_PROMPT
+                        )
+                        return ValidationResult.success(None)
+
                     if amount > available:
                         self.state_manager.messaging.send_text(
                             text=f"Insufficient balance. You have {matching_balance} available."
@@ -201,7 +258,17 @@ class AmountInput(InputComponent):
                 )
                 return ValidationResult.success(None)
 
-        except ValueError:
+        except ValueError as e:
+            logger.error(f"ValueError during amount parsing: {e}")
+            self.state_manager.messaging.send_text(
+                text="Sorry, that doesn't look like an amount to me"
+            )
+            self.state_manager.messaging.send_text(
+                text=AMOUNT_PROMPT
+            )
+            return ValidationResult.success(None)
+        except Exception as e:
+            logger.error(f"Unexpected error during amount parsing: {e}")
             self.state_manager.messaging.send_text(
                 text="Sorry, that doesn't look like an amount to me"
             )

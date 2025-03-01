@@ -5,13 +5,15 @@ Handles creating a new Credex offer through the API:
 - Creates new Credex offer via API
 - Updates state with schema-validated dashboard data
 """
+from ..base import ApiComponent
 
+import logging
 from typing import Any, Dict
 
 from core.api.base import handle_api_response, make_api_request
 from core.error.types import ValidationResult
 
-from ..base import ApiComponent
+logger = logging.getLogger(__name__)
 
 
 class CreateCredexApiCall(ApiComponent):
