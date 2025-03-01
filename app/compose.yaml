@@ -24,6 +24,7 @@ services:
       - MYCREDEX_APP_URL=https://dev.mycredex.dev
       - CLIENT_API_KEY=${CLIENT_API_KEY}
       - USE_PROGRESSIVE_FLOW=True
+      - MOCK_TEST_KEY=${MOCK_TEST_KEY}
     command: ["./start_app.sh"]
     depends_on:
       redis-state:
@@ -58,6 +59,8 @@ services:
       - ../mock:/app/mock
     ports:
       - "8001:8001"
+    environment:
+      - MOCK_TEST_KEY=${MOCK_TEST_KEY}
     command: ["python3", "mock/server.py"]
     depends_on:
       - app
