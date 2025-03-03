@@ -24,7 +24,7 @@ requests==2.32.3
 # - types-requests requires >=2
 # - watchtower->boto3->botocore requires >=1.25.4<3!=2.2.0
 urllib3>=2.0.0,<3.0.0
-watchtower==3.3.1
+watchtower==3.4.0
 PyJWT==2.10.1
 
 # Dependencies
