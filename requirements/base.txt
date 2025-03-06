@@ -4,7 +4,7 @@ djangorestframework==3.15.2
 django-cors-headers==4.7.0
 django-filter==25.1
 # Updated to fix CVE-2024-22513 (information disclosure vulnerability)
-djangorestframework-simplejwt==5.4.0
+djangorestframework-simplejwt==5.5.0
 djangorestframework-xml==2.0.0
 django-environ==0.12.0
 
@@ -24,8 +24,8 @@ requests==2.32.3
 # - types-requests requires >=2
 # - watchtower->boto3->botocore requires >=1.25.4<3!=2.2.0
 urllib3>=2.0.0,<3.0.0
-watchtower==3.3.1
-PyJWT==2.10.1
+watchtower==3.4.0
+PyJWT==2.9.0
 
 # Dependencies
 asgiref==3.8.1
