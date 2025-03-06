@@ -7,10 +7,8 @@
                 "s3:*"
             ],
             "Resource": [
-                "arn:aws:s3:::vimbiso-terraform-state-*",
-                "arn:aws:s3:::vimbiso-terraform-state-*/*",
-                "arn:aws:s3:::vimbiso-alb-logbucket-*",
-                "arn:aws:s3:::vimbiso-alb-logbucket-*/*"
+                "arn:aws:s3:::vimbisobuckets1-state-*",
+                "arn:aws:s3:::vimbisobuckets1-state-*/*"
             ]
         },
         {
@@ -19,7 +17,7 @@
                 "dynamodb:*"
             ],
             "Resource": [
-                "arn:aws:dynamodb:af-south-1:*:table/vimbiso-terraform-state-lock-*"
+                "arn:aws:dynamodb:af-south-1:*:table/vimbisobuckets1-state-lock-*"
             ]
         },
         {
