@@ -7,10 +7,12 @@ Handles the login flow for both new and existing members:
 """
 
 import logging
+import re
 from typing import Any
 
 from core.api.base import handle_api_response, make_api_request
 from core.error.types import ValidationResult
+from requests.exceptions import RequestException
 
 from ..base import ApiComponent
 
@@ -152,8 +154,46 @@ class LoginApiCall(ApiComponent):
                     details={"error": str(e)}
                 )
 
+        except RequestException as e:
+            # Handle network-related errors specifically
+            logger.error(f"Network error in login API call: {str(e)}")
+
+            # Check if this is a DNS resolution error
+            error_str = str(e)
+            is_dns_error = "NameResolutionError" in error_str or "Failed to resolve" in error_str
+
+            # For DNS errors or after max attempts, break the loop
+            if is_dns_error or login_attempts >= MAX_LOGIN_ATTEMPTS:
+                self.state_manager.messaging.send_text("❌ Unable to connect to the server. Please try again later.")
+                # Force dashboard state to break the loop
+                self.set_result("send_dashboard")
+                # Reset attempt counter to prevent infinite loops
+                self.state_manager.update_state({
+                    "component_data": {
+                        "login_attempts": 0
+                    }
+                })
+
+            return ValidationResult.failure(
+                message=f"Login failed due to network error: {str(e)}",
+                field="api_call",
+                details={"error": str(e), "is_dns_error": is_dns_error}
+            )
         except Exception as e:
             logger.error(f"Error in login API call: {str(e)}")
+
+            # After max attempts, break the loop for any error
+            if login_attempts >= MAX_LOGIN_ATTEMPTS:
+                self.state_manager.messaging.send_text("❌ Unable to process your request. Please try again later.")
+                # Force dashboard state to break the loop
+                self.set_result("send_dashboard")
+                # Reset attempt counter
+                self.state_manager.update_state({
+                    "component_data": {
+                        "login_attempts": 0
+                    }
+                })
+
             return ValidationResult.failure(
                 message=f"Login failed: {str(e)}",
                 field="api_call",

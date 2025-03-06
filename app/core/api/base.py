@@ -236,7 +236,21 @@ def make_api_request(
                             message="State manager required for authenticated request"
                         )
 
-                    logger.warning("Auth error, initializing login flow")
+                    logger.warning("Auth error, checking if already in login flow")
+
+                    # Check if we're already in a login flow to prevent loops
+                    current_path = state_manager.get_state_value("component_data", {}).get("path")
+                    login_attempts = state_manager.get_state_value("component_data", {}).get("login_attempts", 0)
+
+                    # If we're already in a login flow and have attempts, don't reset
+                    if current_path == "login" and login_attempts > 0:
+                        logger.warning(f"Already in login flow with {login_attempts} attempts, not resetting")
+                        return ErrorHandler.handle_system_error(
+                            code="AUTH_REQUIRED",
+                            service="api_client",
+                            action="make_request",
+                            message="Authentication required - already in login flow"
+                        )
 
                     # Store return URL in state for after login
                     state_manager.update_state({
@@ -275,6 +289,39 @@ def make_api_request(
 
             except RequestException as e:
                 logger.error(f"Request failed: {str(e)}")
+
+                # Check if this is a login request that's failing
+                if url.rstrip('/').split('/')[-1] == 'login' and state_manager:
+                    # Check current login attempts
+                    login_attempts = state_manager.get_state_value("component_data", {}).get("login_attempts", 0)
+
+                    # If we've already tried multiple times, break the loop
+                    if login_attempts >= 2:  # Use 2 instead of 3 to account for the current attempt
+                        logger.warning(f"Login failed after {login_attempts} attempts, breaking retry loop")
+
+                        # Send error message to user
+                        try:
+                            messaging = getattr(state_manager, "messaging", None)
+                            if messaging:
+                                messaging.send_text("❌ Unable to connect to the server. Please try again later.")
+                        except Exception as msg_error:
+                            logger.error(f"Failed to send error message: {msg_error}")
+
+                        # Reset login attempts to prevent further loops
+                        state_manager.update_state({
+                            "component_data": {
+                                "login_attempts": 0
+                            }
+                        })
+
+                        # Raise exception to break the loop
+                        raise SystemException(
+                            message=f"Login failed after {login_attempts} attempts: {str(e)}",
+                            code="LOGIN_FAILED",
+                            service="api_client",
+                            action=f"{method}_{url}"
+                        )
+
                 retries += 1
                 if retries < MAX_RETRIES:
                     time.sleep(RETRY_DELAY)
