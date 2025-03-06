@@ -7,7 +7,6 @@ Handles the login flow for both new and existing members:
 """
 
 import logging
-import re
 from typing import Any
 
 from core.api.base import handle_api_response, make_api_request
