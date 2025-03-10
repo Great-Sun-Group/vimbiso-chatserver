@@ -16,7 +16,7 @@ async-timeout==5.0.1
 
 # Utils
 python-decouple==3.8
-python-json-logger==3.2.1
+python-json-logger==3.3.0
 python-logstash==0.4.8
 requests==2.32.3
 # urllib3 constraint matches requirements from multiple dependencies:
