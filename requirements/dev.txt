@@ -10,7 +10,7 @@ pytest-cov==6.0.0
 mypy==1.15.0
 django-debug-toolbar==5.0.1
 django-browser-reload==1.18.0
-ipython==8.33.0
+ipython==9.0.2
 watchdog==6.0.0  # For mock WhatsApp server hot reload
 
 # Type stubs for better development experience
