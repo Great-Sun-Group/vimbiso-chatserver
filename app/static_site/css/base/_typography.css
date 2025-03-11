@@ -1,0 +1,75 @@
+/* Typography */
+h2 {
+  font-size: 2.5rem;
+  color: var(--organic-gold);
+  margin-bottom: 2rem;
+  position: relative;
+  display: block;
+  text-align: left;
+  white-space: normal;
+}
+
+h2::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 0 !important;
+  width: 60px;
+  height: 4px;
+  background: var(--organic-gold);
+}
+
+p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+ul {
+  margin-bottom: 1.5rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.75rem;
+  position: relative;
+  list-style-type: none;
+}
+
+li::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 0.5rem;
+  width: 8px;
+  height: 8px;
+  background: var(--tech-azure);
+  border-radius: 50%;
+}
+
+li:hover::before {
+  background: var(--organic-gold);
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  p {
+    font-size: 1.25rem;
+  }
+  
+  li {
+    font-size: 1.25rem;
+  }
+}
+
+a {
+  color: var(--tech-azure);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--organic-gold);
+}

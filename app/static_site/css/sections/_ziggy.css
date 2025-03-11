@@ -1,0 +1,40 @@
+.ziggy-section {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem 2rem;
+  background: var(--dark-blue);
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.ziggy-section .content {
+  flex: 0 0 45%;
+}
+
+.ziggy-section .image-container {
+  flex: 0 0 55%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-right: 2rem;
+}
+
+.ziggy-section .image-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .ziggy-section {
+    flex-direction: column;
+    padding: 2rem 1rem;
+  }
+
+  .ziggy-section .content,
+  .ziggy-section .image-container {
+    flex: 0 0 100%;
+  }
+}
