@@ -8,6 +8,11 @@ variable "domain_name" {
   type        = string
 }
 
+variable "root_domain_name" {
+  description = "Root domain name (e.g., vimbisopay.africa)"
+  type        = string
+}
+
 # ALB inputs
 variable "alb_arn" {
   description = "ARN of the application load balancer"
@@ -51,5 +56,12 @@ locals {
     can(regex("^[a-zA-Z0-9][a-zA-Z0-9-]*(\\.[a-zA-Z0-9][a-zA-Z0-9-]*)*$", var.domain_name))
     ? null
     : file("ERROR: invalid domain name format")
+  )
+
+  # Validate root domain format
+  validate_root_domain = (
+    can(regex("^[a-zA-Z0-9][a-zA-Z0-9-]*(\\.[a-zA-Z0-9][a-zA-Z0-9-]*)*$", var.root_domain_name))
+    ? null
+    : file("ERROR: invalid root domain name format")
   )
 }

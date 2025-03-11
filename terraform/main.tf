@@ -3,6 +3,7 @@ locals {
   environments = {
     production = {
       domain_name     = "vimbiso-chatserver.vimbisopay.africa"
+      root_domain_name = "vimbisopay.africa"
       vpc_cidr        = "10.0.0.0/16"
       az_count        = 2
       container_port  = 8000
@@ -13,6 +14,7 @@ locals {
     }
     development = {
       domain_name     = "dev-vimbiso-chatserver.dailycredcoin.com"
+      root_domain_name = "dailycredcoin.com"
       vpc_cidr        = "10.1.0.0/16"
       az_count        = 2
       container_port  = 8000
@@ -43,6 +45,7 @@ module "dns" {
 
   environment      = var.environment
   domain_name      = local.current_env.domain_name
+  root_domain_name = local.current_env.root_domain_name
   alb_arn          = module.base.alb_arn
   alb_dns_name     = module.base.alb_dns_name
   alb_zone_id      = module.base.alb_zone_id

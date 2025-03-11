@@ -1,0 +1,14 @@
+:root {
+  /* Core colors */
+  --dark-blue: #06151f;
+  --tech-azure: #04a0b2;
+  --organic-gold: #fbb016;
+  --text-white: #ffffff;
+
+  /* Global gradients */
+  --section-gradient: linear-gradient(
+    180deg,
+    rgba(4, 160, 178, 0.05),
+    rgba(251, 176, 22, 0.05)
+  );
+}

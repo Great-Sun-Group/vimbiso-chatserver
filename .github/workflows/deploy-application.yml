@@ -19,8 +19,10 @@ jobs:
       ENVIRONMENT: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
       BUILD_TARGET: production
       DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbiso-chatserver.vimbisopay.africa' || 'dev-vimbiso-chatserver.dailycredcoin.com' }}
+      ROOT_DOMAIN: ${{ github.ref == 'refs/heads/prod' && 'vimbisopay.africa' || 'dailycredcoin.com' }}
       # Application variables
       TF_VAR_environment: ${{ github.ref == 'refs/heads/prod' && 'production' || 'development' }}
+      TF_VAR_root_domain_name: ${{ github.ref == 'refs/heads/prod' && 'vimbisopay.africa' || 'dailycredcoin.com' }}
       TF_VAR_enable_https: "true"
       TF_VAR_django_secret: ${{ secrets.DJANGO_SECRET }}
       TF_VAR_mycredex_app_url: ${{ secrets.MYCREDEX_APP_URL }}
@@ -326,13 +328,15 @@ jobs:
           echo "Application Deployment Complete!"
           echo "============================="
           echo "Environment: $ENVIRONMENT"
-          echo "Domain: $(terraform output -raw domain_name)"
+          echo "App Domain: $(terraform output -raw domain_name)"
+          echo "Root Domain: $(terraform output -raw root_domain_name)"
           echo "Image: $IMAGE"
           echo ""
           echo "Access Points:"
           echo "-------------"
           echo "ALB: $(terraform output -raw alb_dns_name)"
-          echo "URL: https://$(terraform output -raw domain_name)"
+          echo "App URL: https://$(terraform output -raw domain_name)"
+          echo "Static Site URL: https://$(terraform output -raw root_domain_name)"
           echo ""
           echo "Health Check:"
           echo "------------"

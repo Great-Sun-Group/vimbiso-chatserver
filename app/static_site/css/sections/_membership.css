@@ -1,0 +1,116 @@
+.membership-section {
+  --intro-font-large: 2em;
+  --intro-font-medium: 1.3em;
+  --intro-font-small: 1em;
+  --whatsapp-font: 1.6em;
+  --panel-gap: 40px;
+  text-align: center;
+}
+
+.membership-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(6, 21, 31, 0.75);
+  z-index: 1;
+}
+
+.membership-section .content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Membership Intro */
+.membership-intro {
+  text-align: center;
+  font-size: 1.8rem;
+  color: var(--organic-gold);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 0;
+  font-weight: 600;
+}
+
+.membership-intro p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  text-align: center !important;
+  text-shadow: 0 0 10px rgba(251, 176, 22, 0.3);
+}
+
+/* Service Panels */
+.service-panels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--panel-gap);
+  margin: 40px 20px;
+  width: calc(100% - 40px);
+  max-width: 3200px;
+}
+
+.service-panel {
+  --panel-padding: 40px;
+  --border-gradient-height: 3px;
+  --hover-transform: -5px;
+  
+  background: rgba(6, 21, 31, 0.6);
+  border: 1px solid var(--tech-azure);
+  border-radius: 12px;
+  padding: var(--panel-padding);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--border-gradient-height);
+  background: linear-gradient(90deg, var(--tech-azure), var(--organic-gold));
+  opacity: 0.7;
+}
+
+.service-panel:hover {
+  transform: translateY(var(--hover-transform));
+  box-shadow: 0 10px 20px rgba(4, 160, 178, 0.2);
+}
+
+.service-panel h3 {
+  color: var(--organic-gold);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0;
+  position: relative;
+  text-align: center;
+}
+
+.service-panel h3::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--organic-gold);
+  opacity: 0.7;
+}
+
+.service-panel p {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .service-panels {
+    grid-template-columns: 1fr;
+    padding: 0 1rem;
+  }
+}

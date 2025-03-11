@@ -1,0 +1,182 @@
+/* Base Section Styles */
+[class*="-section"] {
+  min-height: 600px;
+  max-width: 2000px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.section-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  z-index: 0;
+}
+
+.section-background img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Full Width Centered */
+.full-width-centered {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 6rem 0;
+}
+
+.full-width-centered::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.full-width-centered .content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Content With Image Base */
+.content-with-image {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--dark-blue);
+  background-repeat: no-repeat;
+  max-width: 2000px;
+  margin: 0 auto;
+  padding: 6rem 0;
+  min-height: 600px;
+}
+
+.content-with-image.image-right::before,
+.content-with-image.image-left::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.content-with-image .content {
+  position: relative;
+  z-index: 2;
+  width: clamp(600px, 65%, 1600px); /* Base content width */
+  padding: 3rem;
+  font-size: 1rem;
+}
+
+.content-with-image.image-right .content {
+  margin-right: auto;
+  margin-left: 0;
+  /* Asymmetric padding: grows faster on right side */
+  padding-left: max(4rem, calc((100% - 2000px) / 4 + 4rem)); /* Slower growth */
+  padding-right: max(
+    4rem,
+    calc((100% - 2000px) / 2 + 4rem)
+  ); /* Faster growth */
+}
+
+.content-with-image.image-left .content {
+  margin-left: auto;
+  margin-right: 0;
+  /* Asymmetric padding: grows faster on left side */
+  padding-left: max(4rem, calc((100% - 2000px) / 2 + 4rem)); /* Faster growth */
+  padding-right: max(
+    4rem,
+    calc((100% - 2000px) / 4 + 4rem)
+  ); /* Slower growth */
+  text-align: right;
+}
+
+.content-with-image.image-left h2::after {
+  right: 0;
+  left: auto;
+}
+
+.content-with-image.image-left ul {
+  padding-left: 2rem;
+  padding-right: 0;
+}
+
+.content-with-image.image-left li {
+  text-align: left;
+}
+
+.content-with-image.image-left li::before {
+  left: -1.5rem;
+  right: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-with-image {
+    min-height: auto;
+    padding: 3rem 0;
+  }
+
+  .content-with-image::before {
+    width: 100%;
+    background: linear-gradient(
+      to right,
+      rgba(6, 21, 31, 0.85),
+      rgba(6, 21, 31, 0.85)
+    ) !important;
+  }
+
+  .content-with-image .content {
+    width: 100%;
+    padding: 2rem;
+    max-width: 100%;
+    min-width: 280px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .content-with-image.image-left .content,
+  .content-with-image.image-right .content {
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .content-with-image.image-left h2::after {
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .full-width-centered {
+    padding: 60px 0;
+  }
+
+  .full-width-centered::before {
+    background: linear-gradient(
+      to right,
+      rgba(6, 21, 31, 0.85),
+      rgba(6, 21, 31, 0.85)
+    );
+  }
+}
