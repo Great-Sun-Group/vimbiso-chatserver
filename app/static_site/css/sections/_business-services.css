@@ -1,0 +1,21 @@
+/* Business Services Section Styles */
+.business-services-section {
+  background: var(--section-gradient);
+}
+
+.business-services-section .content {
+  max-width: 900px;
+}
+
+.business-services-section h2 {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.business-services-section ul {
+  margin-bottom: 2rem;
+}
+
+.business-services-section p {
+  margin-bottom: 1.5rem;
+}
