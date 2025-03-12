@@ -22,6 +22,9 @@ urlpatterns = [
     re_path(r'^(?P<path>fonts/.*)$', serve, {'document_root': STATIC_SITE_ROOT}),
     re_path(r'^(?P<path>.*\.ico)$', serve, {'document_root': STATIC_SITE_ROOT}),
 
+    # Add specific pattern for HTML files
+    re_path(r'^(?P<path>.*\.html)$', serve, {'document_root': STATIC_SITE_ROOT}),
+
     # Serve index.html at root and any unmatched paths
     re_path(r'^$', serve, {'path': 'index.html', 'document_root': STATIC_SITE_ROOT}),
     re_path(r'^(?!bot/|health/).*$', serve, {'path': 'index.html', 'document_root': STATIC_SITE_ROOT}),
