@@ -67,9 +67,20 @@
 }
 
 .hero-section .hero-content p {
-  font-size: 1.25rem;
+  font-size: 1.75rem;
   max-width: 600px;
   margin: 2rem auto;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.hero-section .hero-content .hero-line-1 {
+  color: var(--tech-azure);
+}
+
+.hero-section .hero-content .hero-line-2 {
+  color: var(--organic-gold);
 }
 
 .hero-section .logo {
@@ -98,7 +109,13 @@
   }
 
   .hero-section .hero-content p {
-    font-size: 1.15rem;
+    font-size: 1.5rem;
     margin: 1.5rem auto;
+    text-align: center;
+  }
+
+  .hero-section .hero-content .hero-line-1,
+  .hero-section .hero-content .hero-line-2 {
+    display: inline-block;
   }
 }
