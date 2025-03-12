@@ -22,6 +22,10 @@ updates:
         patterns:
           - "boto3*"
           - "watchtower*"
+    ignore:
+      # Prevent PyJWT from updating beyond 2.9.0 to maintain compatibility with djangorestframework-simplejwt
+      - dependency-name: "PyJWT"
+        versions: [">= 2.10.0"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"

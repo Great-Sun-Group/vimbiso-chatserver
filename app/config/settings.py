@@ -9,7 +9,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Core settings
 SECRET_KEY = env("DJANGO_SECRET")
 DEBUG = env("DEBUG", default=False, cast=bool)
-ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost 127.0.0.1").split(" ")
+# Add vimbisopay.africa and dailycredcoin.com domains to allowed hosts
+ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost 127.0.0.1 vimbisopay.africa dev-vimbisopay.africa dailycredcoin.com dev-vimbiso-chatserver.dailycredcoin.com").split(" ")
 
 # Application definition
 INSTALLED_APPS = [
@@ -50,6 +51,11 @@ os.makedirs(BASE_PATH, exist_ok=True, mode=0o755)  # Ensure proper permissions
 # Static files configuration
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_PATH / "static"
+
+# Add static_site directory to STATICFILES_DIRS
+STATICFILES_DIRS = [
+    BASE_DIR / "static_site",
+]
 
 # Minimal SQLite database for Django internals (migrations, etc.)
 # All application state is managed in Redis

@@ -4,6 +4,11 @@ output "domain_name" {
   value       = module.dns.domain_name
 }
 
+output "root_domain_name" {
+  description = "The root domain name for the environment"
+  value       = module.dns.root_domain_name
+}
+
 output "route53_nameservers" {
   description = "The nameservers for the Route53 zone"
   value       = module.dns.nameservers
@@ -56,6 +61,9 @@ output "aws_region" {
   description = "The AWS region"
   value       = data.aws_region.current.name
 }
+
+# Add the missing data source
+data "aws_caller_identity" "current" {}
 
 output "account_id" {
   description = "The AWS account ID"

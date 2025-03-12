@@ -1,0 +1,61 @@
+/* Business Team Section Styles */
+.business-team-section {
+  background: var(--section-gradient);
+}
+
+.business-team-section .content {
+  max-width: 1000px;
+}
+
+.team-members {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.team-member {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.team-member-info {
+  flex: 1;
+}
+
+.team-member-image {
+  width: 100px;
+  height: 100px;
+  margin-right: 1.5rem;
+  border-radius: 50%;
+  background-color: rgba(4, 160, 178, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tech-azure);
+  font-size: 0.8rem;
+  overflow: hidden;
+}
+
+.team-member-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .team-members {
+    grid-template-columns: 1fr;
+  }
+
+  .team-member {
+    flex-direction: column;
+  }
+
+  .team-member-image {
+    margin-bottom: 1rem;
+    margin-right: 0;
+  }
+}

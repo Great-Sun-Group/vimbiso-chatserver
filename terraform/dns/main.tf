@@ -1,15 +1,13 @@
-# Create Route53 zone
-resource "aws_route53_zone" "main" {
-  name = var.domain_name
-
-  tags = {
-    Name = "vimbiso-zone-${var.environment}"
-  }
+# Reference existing Route53 zone
+data "aws_route53_zone" "main" {
+  name = var.root_domain_name
+  private_zone = false
 }
 
-# Request ACM certificate
+# Request ACM certificate for both domains
 resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name
+  subject_alternative_names = [var.root_domain_name]
   validation_method = "DNS"
 
   tags = {
@@ -36,12 +34,12 @@ resource "aws_route53_record" "cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = aws_route53_zone.main.zone_id
+  zone_id         = data.aws_route53_zone.main.zone_id
 }
 
-# Create A record for the application
+# Create A record for the application subdomain
 resource "aws_route53_record" "app" {
-  zone_id         = aws_route53_zone.main.zone_id
+  zone_id         = data.aws_route53_zone.main.zone_id
   name            = var.domain_name
   type            = "A"
   allow_overwrite = true
@@ -53,7 +51,21 @@ resource "aws_route53_record" "app" {
   }
 }
 
-# Create HTTP listener (only when HTTPS is not enabled)
+# Create A record for the root domain (static site)
+resource "aws_route53_record" "root" {
+  zone_id         = data.aws_route53_zone.main.zone_id
+  name            = var.root_domain_name
+  type            = "A"
+  allow_overwrite = true
+
+  alias {
+    name                   = var.alb_dns_name
+    zone_id                = var.alb_zone_id
+    evaluate_target_health = true
+  }
+}
+
+# Create HTTP listener
 resource "aws_lb_listener" "http" {
   count             = var.enable_https ? 0 : 1
   load_balancer_arn = var.alb_arn
@@ -66,20 +78,18 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# These will be created in a second deployment after DNS is configured
+# Certificate validation
 resource "aws_acm_certificate_validation" "main" {
-  count                   = var.enable_https ? 1 : 0
   certificate_arn         = aws_acm_certificate.main.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
 resource "aws_lb_listener" "https" {
-  count             = var.enable_https ? 1 : 0
   load_balancer_arn = var.alb_arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  certificate_arn   = aws_acm_certificate.main.arn # Use certificate directly, not validation
+  certificate_arn   = aws_acm_certificate.main.arn
 
   default_action {
     type             = "forward"
@@ -88,7 +98,6 @@ resource "aws_lb_listener" "https" {
 }
 
 resource "aws_lb_listener" "http_redirect" {
-  count             = var.enable_https ? 1 : 0
   load_balancer_arn = var.alb_arn
   port              = "80"
   protocol          = "HTTP"

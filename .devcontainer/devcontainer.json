@@ -19,7 +19,8 @@
                 "github.vscode-github-actions",
                 "ms-azuretools.vscode-docker",
                 "hashicorp.terraform",
-                "bierner.markdown-mermaid"
+                "bierner.markdown-mermaid",
+                "ritwickdey.LiveServer"
             ],
             "settings": {
                 "python.defaultInterpreterPath": "/usr/local/bin/python",
