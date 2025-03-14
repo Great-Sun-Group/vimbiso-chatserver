@@ -2,31 +2,36 @@
 @import 'base/_variables.css';
 @import 'base/_reset.css';
 @import 'base/_typography.css';
-@import 'base/_buttons.css';
+
+/* Components */
+@import 'components/_buttons.css';
 
 /* Layouts */
 @import 'layouts/_base-layouts.css';
+@import 'layouts/_containers.css';
+@import 'layouts/_section.css';
+@import 'layouts/_grid.css';
 
 /* Sections */
-@import 'sections/_hero.css';
-@import 'sections/_intro.css';
-@import 'sections/_membership.css';
-@import 'sections/_network-roles.css';
-@import 'sections/_hustlers.css';
-@import 'sections/_treasurers.css';
-@import 'sections/_auditors.css';
-@import 'sections/_credex.css';
-@import 'sections/_productive-roles.css';
-@import 'sections/_traders.css';
-@import 'sections/_ziggy.css';
-@import 'sections/_security.css';
-@import 'sections/_african-entrepreneurs.css';
-@import 'sections/_transparency.css';
-@import 'sections/_business-services.css';
-@import 'sections/_business-security.css';
-@import 'sections/_business-team.css';
-@import 'sections/_business-services-list.css';
-@import 'sections/_business-message.css';
+/* Heroes */
+@import 'sections/heroes/_base-hero.css';
+@import 'sections/heroes/_home-hero.css';
+@import 'sections/heroes/_business-hero.css';
+
+/* Content Sections */
+@import 'sections/content/_text-image-left.css';
+@import 'sections/content/_text-image-right.css';
+@import 'sections/content/_full-width.css';
+
+/* Specialized Sections */
+@import 'sections/specialized/_membership.css';
+@import 'sections/specialized/_team.css';
+@import 'sections/specialized/_getting-started.css';
+
+/* Utilities */
+@import 'utilities/_spacing.css';
+@import 'utilities/_text.css';
+@import 'utilities/_visibility.css';
 
 /* Hide Image Prompts */
 .image-prompt {

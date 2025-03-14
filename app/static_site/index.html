@@ -12,8 +12,8 @@
   </head>
   <body>
     <!-- Hero Section -->
-    <section class="hero-section">
-      <picture class="hero-background">
+    <section class="hero hero--home">
+      <picture class="hero__background">
         <source
           srcset="
             images/harare_golden-2000w.webp 2000w,
@@ -38,27 +38,29 @@
           fetchpriority="high"
         />
       </picture>
-      <div class="container hero-content">
-        <img src="images/logo.png" alt="VimbisoPay Logo" class="logo" />
-        <p>
-          Something new and different is stirring in the market stalls of Mbare,
-          dancing down the kombi routes of Harare, and catching fire across the
-          informal economy of Zimbabwe.
-        </p>
-        <p>
-          Networks of value pulse with new life and growth, secure in
-          crypto-protected channels that connect anyone, anywhere...<br />for
-          free.
-        </p>
-        <div class="btn-container">
-          <a href="business-services.html" class="business-services-btn">Business Services</a>
+      <div class="container hero__content">
+        <img src="images/logo.png" alt="VimbisoPay Logo" class="hero__logo" />
+        <div class="hero__text">
+          <p class="hero__paragraph">
+            Something new and different is stirring in the market stalls of Mbare,
+            dancing down the kombi routes of Harare, and catching fire across the
+            informal economy of Zimbabwe.
+          </p>
+          <p class="hero__paragraph">
+            Networks of value pulse with new life and growth, secure in
+            crypto-protected channels that connect anyone, anywhere...<br />for
+            free.
+          </p>
+        </div>
+        <div class="hero__actions">
+          <a href="business-services.html" class="button button--primary">Business Services</a>
         </div>
       </div>
     </section>
 
     <!-- Introduction Section -->
-    <section class="content-with-image image-right intro-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-right section--intro">
+      <picture class="section__background">
         <source
           srcset="
             images/market1-2000w.webp 2000w,
@@ -83,7 +85,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <p>
           VimbisoPay is a revolutionary payment system that serves the
           hardworking hustlers who produce value across Zimbabwe's vast informal
@@ -102,15 +104,15 @@
           provide each other with the goods, services, tools, and relationships
           they need to prosper through the challenges of the moment.
         </p>
-        <div class="btn-container">
-          <a href="business-services.html" class="business-services-btn">Business Services</a>
+        <div class="button__container">
+          <a href="business-services.html" class="button button--primary">Business Services</a>
         </div>
       </div>
     </section>
 
     <!-- Using VimbisoPay Section -->
-    <section class="full-width-centered membership-section">
-      <picture class="section-background">
+    <section class="section section--full-width section--membership">
+      <picture class="section__background">
         <source
           srcset="
             images/membership-2000w.webp 2000w,
@@ -137,58 +139,58 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
-        <div class="membership-intro">
+      <div class="section__content">
+        <div class="section__intro">
           <p>
-            <span style="font-size: 2em"
+            <span class="text--large"
               >Monthly memberships start at $1 USD</span
             ><br />
-            <span style="font-size: 1.3em"
+            <span class="text--medium"
               >for unlimited transactions in any denomination.</span
             >
           </p>
           <p>
-            <span style="color: var(--tech-azure)"
+            <span class="text--highlight"
               >Free accounts with daily limits are available.</span
             >
           </p>
           <p>
             Send "Hi" on WhatsApp to<br />
-            <a href="https://wa.me/263785304448" target="_blank" style="color: var(--tech-azure); font-size: 1.6em; text-decoration: none"
+            <a href="https://wa.me/263785304448" target="_blank" class="text--whatsapp"
               >263 785 304 448</a
             ><br />to become a member.
           </p>
         </div>
 
-        <div class="service-panels">
+        <div class="service-panel__container">
           <div class="service-panel">
-            <h3>Secure<br />Accounts</h3>
-            <p>
+            <h3 class="service-panel__heading">Secure<br />Accounts</h3>
+            <p class="service-panel__text">
               Free secure WhatsApp chatbot to manage accounts and make free
               credex payments to anyone, anywhere, in any amount. Android app
               coming soon.
             </p>
           </div>
           <div class="service-panel">
-            <h3>Cash<br />Services</h3>
-            <p>
+            <h3 class="service-panel__heading">Cash<br />Services</h3>
+            <p class="service-panel__text">
               Free cash in (onramp) and cash out (offramp) services in Zimbabwe,
               starting in Harare with immediate expansion to Bulawayo and then
               nationally.
             </p>
           </div>
           <div class="service-panel">
-            <h3>Global<br />Remittances</h3>
-            <p>
+            <h3 class="service-panel__heading">Global<br />Remittances</h3>
+            <p class="service-panel__text">
               Free global remittances, starting from members in Canada to
               members in Zimbabwe (Harare with immediate expansion).
             </p>
           </div>
         </div>
 
-        <div class="membership-intro">
+        <div class="section__intro">
           <p>
-            <span style="font-size: 1em"
+            <span class="text--small"
               >VimbisoPay integrates seamlessly with banks, financial
               institutions, and the global economy while maintaining
               mathematical, cryptographic, and financial independence from
@@ -200,8 +202,8 @@
     </section>
 
     <!-- Seven Networked Roles Section -->
-    <section class="content-with-image image-left network-roles-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--network-roles">
+      <picture class="section__background">
         <source
           srcset="
             images/seven_networked-2000w.webp 2000w,
@@ -228,7 +230,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Seven Networked Roles</h2>
         <p>
           The credex ecosystem is an economic network in which members can move
@@ -245,8 +247,8 @@
     </section>
 
     <!-- Hustlers Section -->
-    <section class="content-with-image image-right hustlers-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-right section--hustlers">
+      <picture class="section__background">
         <source
           srcset="
             images/hustlers_market-2000w.webp 2000w,
@@ -273,7 +275,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Hustlers</h2>
         <p>
           Hustlers are the engine of any economy. Economists may call them
@@ -297,8 +299,8 @@
     </section>
 
     <!-- Treasurers Section -->
-    <section class="content-with-image image-left treasurers-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--treasurers">
+      <picture class="section__background">
         <source
           srcset="
             images/treasurer-2000w.webp 2000w,
@@ -325,7 +327,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Treasurers</h2>
         <p>
           Treasurers provide trustworthy financial security through the
@@ -342,8 +344,8 @@
     </section>
 
     <!-- Auditors Section -->
-    <section class="content-with-image image-right auditors-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-right section--auditors">
+      <picture class="section__background">
         <source
           srcset="
             images/auditor_workspace-2000w.webp 2000w,
@@ -370,7 +372,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Auditors</h2>
         <p>
           Auditors are elected by Treasurers to enforce their accountability to
@@ -391,8 +393,8 @@
     </section>
 
     <!-- Productive Roles Section -->
-    <section class="content-with-image image-left productive-roles-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--productive-roles">
+      <picture class="section__background">
         <source
           srcset="
             images/productive_roles-2000w.webp 2000w,
@@ -419,19 +421,19 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Productive Roles</h2>
         <p>
           Economic growth is created and managed by members in the productive
           roles, who pulse value through the network, increasing it with every
-          successful movement.
+          successful movement:
         </p>
-        <ul>
-          <li>Hustlers manage accounts and transactions</li>
-          <li>Owners manage companies and balance sheets</li>
-          <li>Entrepreneurs manage portfolios, equities and bonds</li>
-          <li>Investors manage capital and resource flows</li>
-        </ul>
+        <p>
+          &nbsp;&nbsp; <strong>Hustlers</strong> manage accounts and transactions.<br />
+          &nbsp;&nbsp; <strong>Owners</strong> manage companies and balance sheets.<br />
+          &nbsp;&nbsp; <strong>Entrepreneurs</strong> manage portfolios, equities and bonds.<br />
+          &nbsp;&nbsp; <strong>Investors</strong> manage capital and resource flows.<br />
+        </p>
 
         <p>
           Simply by using VimbisoPay to manage their hustles, members generate a
@@ -442,8 +444,8 @@
     </section>
 
     <!-- Credex Section -->
-    <section class="full-width-centered credex-section">
-      <picture class="section-background">
+    <section class="section section--full-width section--credex">
+      <picture class="section__background">
         <source
           srcset="
             images/secured_unsecured-2000w.webp 2000w,
@@ -470,7 +472,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <div class="credexes">
           <h2>Secured Credex</h2>
           <p>
@@ -526,8 +528,8 @@
     </section>
 
     <!-- Gold and US Dollars -->
-    <section class="full-width-centered security-section">
-      <picture class="section-background">
+    <section class="section section--full-width section--security">
+      <picture class="section__background">
         <source
           srcset="
             images/security-2000w.webp 2000w,
@@ -552,7 +554,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Gold and US Dollars</h2>
 
         <p>
@@ -597,8 +599,8 @@
     </section>
 
     <!-- Traders -->
-    <section class="content-with-image image-right traders-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-right section--traders">
+      <picture class="section__background">
         <source
           srcset="
             images/trader_screens-2000w.webp 2000w,
@@ -625,7 +627,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Traders</h2>
         <p>
           Knitting together secured credex, unsecured credex, and flows of value
@@ -650,8 +652,8 @@
     </section>
 
     <!-- ZWG Section
-    <section class="ziggy-section">
-      <div class="content">
+    <section class="section section--ziggy">
+      <div class="section__content">
         <h2>Ziggy</h2>
         <p>
           The Zimbabwean Gold (ZWG) denomination created by the Reserve Bank of
@@ -695,10 +697,8 @@
   -->
 
     <!-- Global Connection Section -->
-    <section
-      class="content-with-image image-left african-entrepreneurs-section"
-    >
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--african-entrepreneurs">
+      <picture class="section__background">
         <source
           srcset="
             images/protected-2000w.webp 2000w,
@@ -725,7 +725,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Protecting African<br />Entrepreneurs</h2>
         <p>
           Relationships between the seven networked roles fully replace
@@ -745,8 +745,8 @@
     </section>
 
     <!-- Transparency Section -->
-    <section class="full-width-centered transparency-section">
-      <picture class="section-background">
+    <section class="section section--full-width section--transparency">
+      <picture class="section__background">
         <source
           srcset="
             images/membership-2000w.webp 2000w,
@@ -773,7 +773,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Auditable Transparency</h2>
         <p>
           See source code for the
@@ -785,8 +785,8 @@
             >vimbiso-chatserver client</a
           >.
         </p>
-        <div class="btn-container">
-          <a href="business-services.html" class="business-services-btn">Business Services</a>
+        <div class="button__container">
+          <a href="business-services.html" class="button button--primary">Business Services</a>
         </div>
       </div>
     </section>
@@ -794,7 +794,7 @@
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const root = document.documentElement;
-        const hero = document.querySelector(".hero-section");
+        const hero = document.querySelector(".hero");
         const heroHeight = hero.offsetHeight;
 
         window.addEventListener("scroll", () => {
@@ -804,7 +804,7 @@
             0.85 - (scrollPosition / maxScroll) * 0.85,
             0
           );
-          root.style.setProperty("--hero-overlay-opacity", opacity);
+          root.style.setProperty("--overlay-opacity", opacity);
         });
       });
     </script>

@@ -1,0 +1,26 @@
+/* Business Hero Section Styles - Specific to business-services.html */
+.hero--business .hero__text {
+  margin: 2rem auto;
+}
+
+.hero--business .hero__line {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.hero--business .hero__line--primary {
+  color: var(--tech-azure);
+}
+
+.hero--business .hero__line--secondary {
+  color: var(--organic-gold);
+}
+
+@media (max-width: 768px) {
+  .hero--business .hero__line {
+    font-size: 1.5rem;
+    display: inline-block;
+  }
+}

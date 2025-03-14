@@ -1,0 +1,58 @@
+/* Full Width Section */
+.section--full-width {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 6rem 0;
+}
+
+.section--full-width::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(6, 21, 31, 0.75);
+  z-index: 1;
+}
+
+.section--full-width .section__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+/* Full Width Section with Dark Overlay */
+.section--full-width.section--dark-overlay::before {
+  background: rgba(6, 21, 31, 0.85);
+}
+
+/* Full Width Section with Light Overlay */
+.section--full-width.section--light-overlay::before {
+  background: rgba(6, 21, 31, 0.6);
+}
+
+/* Full Width Section with Gradient Overlay */
+.section--full-width.section--gradient-overlay::before {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 21, 31, 0.85),
+    rgba(4, 160, 178, 0.4)
+  );
+}
+
+@media (max-width: 768px) {
+  .section--full-width {
+    padding: 4rem 0;
+  }
+
+  .section--full-width .section__content {
+    padding: 0 1.5rem;
+  }
+}
