@@ -1,0 +1,73 @@
+/* Text with Image Right Section */
+.section--with-image.section--image-right {
+  position: relative;
+}
+
+.section--with-image.section--image-right::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to right,
+    rgba(6, 21, 31, 0.85) 50%,
+    rgba(6, 21, 31, 0.4) 100%
+  );
+  z-index: 1;
+}
+
+.section--with-image.section--image-right .section__content {
+  margin-right: auto;
+  margin-left: 0;
+  /* Asymmetric padding: grows faster on right side */
+  padding-left: max(var(--space-3xl), calc((100% - 2000px) / 4 + var(--space-3xl))); /* Slower growth */
+  padding-right: max(
+    var(--space-3xl),
+    calc((100% - 2000px) / 2 + var(--space-3xl))
+  ); /* Faster growth */
+  text-align: left;
+}
+
+.section--with-image.section--image-right h2::after {
+  left: 0;
+  right: auto;
+}
+
+.section--with-image.section--image-right ul {
+  padding-left: var(--space-xl);
+  padding-right: 0;
+}
+
+.section--with-image.section--image-right li {
+  text-align: left;
+  position: relative;
+}
+
+.section--with-image.section--image-right li::before {
+  left: -1.5rem;
+  right: auto;
+  background: var(--tech-azure);
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .section--with-image.section--image-right::before {
+    background: linear-gradient(
+      to right,
+      rgba(6, 21, 31, 0.85),
+      rgba(6, 21, 31, 0.85)
+    );
+  }
+
+  .section--with-image.section--image-right .section__content {
+    margin: 0 auto;
+    padding: var(--space-xl);
+    text-align: center;
+  }
+
+  .section--with-image.section--image-right h2::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

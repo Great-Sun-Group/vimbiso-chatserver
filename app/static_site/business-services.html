@@ -12,8 +12,8 @@
   </head>
   <body>
     <!-- Hero Section -->
-    <section class="hero-section">
-      <picture class="hero-background">
+    <section class="hero hero--business">
+      <picture class="hero__background">
         <source
           srcset="
             images/harare_golden-2000w.webp 2000w,
@@ -38,37 +38,64 @@
           fetchpriority="high"
         />
       </picture>
-      <div class="container hero-content">
-        <img src="images/logo.png" alt="VimbisoPay Logo" class="logo" />
-        <p>
-          <span class="hero-line-1">Small change and payments for Zimbabwe</span><br />
-          <span class="hero-line-2">Free WhatsApp chatbot and Android app</span>
-        </p>
+      <div class="container hero__content">
+        <img src="images/logo.png" alt="VimbisoPay Logo" class="hero__logo" />
+        <div class="hero__text">
+          <p style="text-align: center;">
+            <span class="hero__line hero__line--primary">Small change and payments for Zimbabwe</span><br />
+            <span class="hero__line hero__line--secondary">Free WhatsApp chatbot and Android app</span>
+          </p>
+        </div>
       </div>
     </section>
 
     <!-- Getting Started Section -->
-    <section class="full-width-centered business-services-section">
-      <div class="content">
+    <section class="section section--full-width section--business-services">
+      <picture class="section__background">
+        <source
+          srcset="
+            images/market1-2000w.webp 2000w,
+            images/market1-1200w.webp 1200w,
+            images/market1-600w.webp   600w
+          "
+          sizes="100vw"
+          type="image/webp"
+        />
+        <source
+          srcset="
+            images/market1-2000w.jpg 2000w,
+            images/market1-1200w.jpg 1200w,
+            images/market1-600w.jpg   600w
+          "
+          sizes="100vw"
+          type="image/jpeg"
+        />
+        <img
+          src="images/market1-1200w.jpg"
+          alt="Market scene"
+          width="1200"
+          height="800"
+          loading="lazy"
+        />
+      </picture>
+      <div class="section__content">
         <h2>How to get started:</h2>
-        <ul>
-          <li>Become a member and create a free account when you send "Hi" on WhatsApp to <a href="https://wa.me/263785304448" target="_blank">263 785 304 448</a>, or on our Android app that will be available in April 2025.</li>
+        <ol class="getting-started-steps">
+          <li>Send "Hi" on WhatsApp to <a href="https://wa.me/263785304448" target="_blank">263 785 304 448</a> to become a member.</li>
           <li>Purchase a secured credex balance with cash or mobile money.</li>
-          <li>Use your free account to send up to $10/day in any amount, or upgrade to the Hustler role for $1/month to get unlimited transactions. <strong>The first 10,000 Hustlers get a full year of unlimited transactions for $1 USD.</strong></li>
-          <li>When repeat customers need a few cents or a few dollars in change, send it from your balance.</li>
-          <li>Allow customers to use their credex balances in their future transactions to pay you change they owe.</li>
-          <li>You or your customers can cash your balance out any time with VimbisoPay.</li>
-        </ul>
+          <li>When your customers need a few cents or a few dollars in change, send it from your balance.</li>
+          <li>Accept secured credex back when your customers owe you change.</li>
+        </ol>
 
         <p>
-          VimbisoPay is a scalable solution for payments of any amount. Once you and your customers are comfortable using it, you can start accepting it for full payments, if doing so adds value to your business.
+          Once you and your customers are comfortable using VimbisoPay, you can start accepting it for payments of any amount. Send $10/day for free, or get unlimited transactions for $1/month.
         </p>
       </div>
     </section>
 
     <!-- Security Section -->
-    <section class="content-with-image image-left business-security-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--business-security">
+      <picture class="section__background">
         <source
           srcset="
             images/treasurer-2000w.webp 2000w,
@@ -93,7 +120,7 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Is my money safe?</h2>
         <p>
           The VimbisoPay software is built with auditable transparency. The source code is public (<a href="https://github.com/Great-Sun-Group/credex-core">here</a> and <a href="https://github.com/Great-Sun-Group/vimbiso-chatserver">here</a>), and the VimbisoPay team guarantees that behind every dollar of your secured credex balances lies a real dollar held in trust. You can cash out at any time.</p>
@@ -104,63 +131,63 @@
     </section>
 
     <!-- Leadership Team Section -->
-    <section class="full-width-centered team-section business-team-section">
-      <div class="content">
+    <section class="section section--full-width section--team section--business-team">
+      <div class="section__content">
         <h2>Leadership Team</h2>
-        <div class="team-members">
-          <div class="team-member">
-            <div class="team-member-image">
+        <div class="team__container">
+          <div class="team__member">
+            <div class="team__member-image">
               <picture>
                 <source srcset="images/Fortune-Chasi-200w.webp" type="image/webp">
                 <source srcset="images/Fortune-Chasi-200w.jpg" type="image/jpeg">
                 <img src="images/Fortune-Chasi-200w.jpg" alt="Fortune Chasi" width="200" height="200" loading="lazy">
               </picture>
             </div>
-            <div class="team-member-info">
-              <p><strong>The Honourable Fortune Chasi, Director</strong><br>
-              Served Zimbabwe as Minister of Energy & Power Development, Deputy Minister of Justice, Deputy Minister of Transport, and at the Reserve Bank of Zimbabwe.</p>
+            <div class="team__member-info">
+              <h4 class="team__member-title" style="color: var(--tech-azure);">The Honourable Fortune Chasi, Director</h4>
+              <p>Served Zimbabwe as Minister of Energy & Power Development, Deputy Minister of Justice, Deputy Minister of Transport, and at the Reserve Bank of Zimbabwe.</p>
             </div>
           </div>
 
-          <div class="team-member">
-            <div class="team-member-image">
+          <div class="team__member">
+            <div class="team__member-image">
               <picture>
                 <source srcset="images/Ryan-Watson-200w.webp" type="image/webp">
                 <source srcset="images/Ryan-Watson-200w.jpg" type="image/jpeg">
                 <img src="images/Ryan-Watson-200w.jpg" alt="Ryan Watson" width="200" height="200" loading="lazy">
               </picture>
             </div>
-            <div class="team-member-info">
-              <p><strong>Ryan Watson, Director</strong><br>
-              Canadian finance and technology entrepreneur. Small business advisor. Founder and current Chief Technology Officer.</p>
+            <div class="team__member-info">
+              <h4 class="team__member-title" style="color: var(--tech-azure);">Ryan Watson, Director</h4>
+              <p>Canadian finance and technology entrepreneur. Small business advisor. Founder and Chief Technology Officer.</p>
             </div>
           </div>
 
-          <div class="team-member">
-            <div class="team-member-image">
+          <div class="team__member">
+            <div class="team__member-image">
               <picture>
                 <source srcset="images/Cathy-Muchechetere-200w.webp" type="image/webp">
                 <source srcset="images/Cathy-Muchechetere-200w.jpg" type="image/jpeg">
                 <img src="images/Cathy-Muchechetere-200w.jpg" alt="Dr. Cathy Muchechetere" width="200" height="200" loading="lazy">
               </picture>
             </div>
-            <div class="team-member-info">
-              <p><strong>Dr. Cathy Muchechetere, Director</strong><br>
-              Former Zimbabwean Anti-Corruption Commissioner and Chief Executive Officer of the Southern Africa Association of Accountants.</p>
+            <div class="team__member-info">
+              <h4 class="team__member-title" style="color: var(--tech-azure);">Dr. Cathy Muchechetere, Director</h4>
+              <p>Former Zimbabwean Anti-Corruption Commissioner and Chief Executive Officer of the Southern Africa Association of Accountants.</p>
             </div>
           </div>
 
-          <div class="team-member">
-            <div class="team-member-image">
+          <div class="team__member">
+            <div class="team__member-image">
               <picture>
                 <source srcset="images/Mike-Dube-200w.webp" type="image/webp">
                 <source srcset="images/Mike-Dube-200w.jpg" type="image/jpeg">
                 <img src="images/Mike-Dube-100w.jpg" alt="Mike Dube" width="100" height="100" loading="lazy">
               </picture>
             </div>
-            <div class="team-member-info">
-              <p><strong>Mike Dube, CEO</strong><br>
-              Entrepreneur and community leader. Harare and Bulawayo. Captain of VimbisoPay street operations.</p>
+            <div class="team__member-info">
+              <h4 class="team__member-title" style="color: var(--tech-azure);">Mike Dube, CEO</h4>
+              <p>Entrepreneur and community leader. Harare and Bulawayo. Captain of VimbisoPay street operations.</p>
             </div>
           </div>
         </div>
@@ -168,14 +195,15 @@
     </section>
 
     <!-- Services Section -->
-    <section class="content-with-image image-left business-services-list-section">
-      <picture class="section-background">
+    <section class="section section--with-image section--image-left section--business-services-list">
+      <picture class="section__background">
         <source
           srcset="
             images/productive_roles-2000w.webp 2000w,
             images/productive_roles-1200w.webp 1200w,
             images/productive_roles-600w.webp   600w
           "
+          sizes="100vw"
           type="image/webp"
         />
         <source
@@ -184,6 +212,7 @@
             images/productive_roles-1200w.jpg 1200w,
             images/productive_roles-600w.jpg   600w
           "
+          sizes="100vw"
           type="image/jpeg"
         />
         <img
@@ -194,17 +223,17 @@
           loading="lazy"
         />
       </picture>
-      <div class="content">
+      <div class="section__content">
         <h2>Full suite of business services</h2>
         <p>
-          Launched in the Harare-Bulawayo corridor, and already processing remittances from Canada, VimbisoPay will be releasing a series of services as we expand internationally and across Zimbabwe, starting with these features in April, 2025:
+          Launched in the Harare-Bulawayo corridor, and already processing remittances from Canada, VimbisoPay is releasing a series of services as we expand internationally and across Zimbabwe, starting with these features in April, 2025:
         </p>
-        <ul>
-          <li>Android mobile app</li>
-          <li>Marketplace to advertise your products and services</li>
-          <li>Multiple accounts (personal and business)</li>
-          <li>Invoicing and receipts</li>
-        </ul>
+        <p>
+          &nbsp;&nbsp; Android mobile app<br />
+          &nbsp;&nbsp; Marketplace to advertise your products and services<br />
+          &nbsp;&nbsp; Multiple accounts (personal and business)<br />
+          &nbsp;&nbsp; Invoicing and receipts<br />
+        </p>
 
         <p>
           Our base functionality elegantly solves payment issues, and the new features will add value across your business. The first 10,000 members to take advantage of the offer get all the above for a year for $1. Full price for these features is just $1/month.
@@ -213,17 +242,18 @@
     </section>
 
     <!-- Founder Message Section -->
-    <section class="full-width-centered message-section business-message-section">
-      <div class="content">
+    <section class="section section--full-width section--business-message">
+      <div class="section__content">
         <h2>Message from the Founder</h2>
         <p>
-          VimbisoPay is business support software built specifically for the entrepreneurs and hustlers that power Zimbabwe's vast informal sector. Our business succeeds when we add massive value to yours. Please let us know how we're doing, and what we can do next to make your life easier and your business more efficient.
+          VimbisoPay provides business services to the entrepreneurs and hustlers that power Zimbabwe's vast informal sector. We're collaborating across continents to bring you simple and secure payment, accounting, marketing, and reporting services.
         </p>
         <p>
-          We're collaborating across continents to bring you safe, simple, efficient payment, accounting, marketing, and business services.
+          Our purpose is to help you overcome the most critical business challenge that you face today, whatever it is. Please let us know how we're doing, and what we can do next to make your life easier and your business more efficient.
         </p>
+
         <p>
-          As an early adoptor, your feedback is invaluable. Please do reach out with any questions, comments, suggestions, or feature requests.
+          As an early adoptor, your feedback is invaluable. Please do reach out with any questions, comments, suggestions, or feature requests. My personal WhatsApp is below.
         </p>
 
         <!--
@@ -236,10 +266,11 @@
             </picture>
           </div>
           -->
-          <div class="founder-name">
+          <p>
             Ryan Luke Watson<br />
-            263 778 177 125
-          </div>
+            1 902 333 2786<br />
+            263 778 177 125<br />
+          </p>
         </div>
       </div>
     </section>

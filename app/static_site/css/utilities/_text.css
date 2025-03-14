@@ -1,0 +1,88 @@
+/* Text Utilities */
+
+/* Text Alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* Text Transformation */
+.text-lowercase { text-transform: lowercase; }
+.text-uppercase { text-transform: uppercase; }
+.text-capitalize { text-transform: capitalize; }
+
+/* Font Weight */
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* Font Size */
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-3xl { font-size: 1.875rem; }
+.text-4xl { font-size: 2.25rem; }
+.text-5xl { font-size: 3rem; }
+
+/* Line Height */
+.leading-none { line-height: 1; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-normal { line-height: 1.5; }
+.leading-relaxed { line-height: 1.625; }
+.leading-loose { line-height: 2; }
+
+/* Text Colors */
+.text-white { color: var(--text-white); }
+.text-azure { color: var(--tech-azure); }
+.text-gold { color: var(--organic-gold); }
+.text-dark { color: var(--dark-blue); }
+
+/* Text Decoration */
+.underline { text-decoration: underline; }
+.line-through { text-decoration: line-through; }
+.no-underline { text-decoration: none; }
+
+/* Text Overflow */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Text Shadow */
+.text-shadow-sm { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); }
+.text-shadow { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); }
+.text-shadow-lg { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); }
+.text-shadow-none { text-shadow: none; }
+
+/* Letter Spacing */
+.tracking-tighter { letter-spacing: -0.05em; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-normal { letter-spacing: 0; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-widest { letter-spacing: 0.1em; }
+
+/* Special Text Styles */
+.text--large { font-size: 2em; }
+.text--medium { font-size: 1.3em; }
+.text--small { font-size: 1em; }
+.text--highlight { color: var(--tech-azure); }
+.text--whatsapp {
+  color: var(--tech-azure);
+  font-size: 1.6em;
+  text-decoration: none;
+}
+
+/* Responsive Text Alignment */
+@media (max-width: var(--breakpoint-md)) {
+  .text-center-sm { text-align: center; }
+  .text-left-sm { text-align: left; }
+  .text-right-sm { text-align: right; }
+}
