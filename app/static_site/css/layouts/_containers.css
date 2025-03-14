@@ -1,0 +1,44 @@
+/* Container Styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Content Container */
+.section__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+}
+
+/* Full Width Container */
+.container--full-width {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+/* Narrow Container */
+.container--narrow {
+  max-width: 800px;
+}
+
+/* Wide Container */
+.container--wide {
+  max-width: 1600px;
+}
+
+/* Responsive Containers */
+@media (max-width: var(--breakpoint-md)) {
+  .container {
+    padding: 0 var(--space-sm);
+  }
+
+  .section__content {
+    padding: 0 var(--space-md);
+  }
+}

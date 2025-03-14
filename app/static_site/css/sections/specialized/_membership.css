@@ -1,13 +1,10 @@
-.membership-section {
-  --intro-font-large: 2em;
-  --intro-font-medium: 1.3em;
-  --intro-font-small: 1em;
-  --whatsapp-font: 1.6em;
-  --panel-gap: 40px;
+/* Membership Section */
+.section--membership {
+  --panel-gap: var(--grid-gap-large);
   text-align: center;
 }
 
-.membership-section::before {
+.section--membership::before {
   content: "";
   position: absolute;
   top: 0;
@@ -18,13 +15,13 @@
   z-index: 1;
 }
 
-.membership-section .content {
+.section--membership .section__content {
   position: relative;
   z-index: 2;
 }
 
-/* Membership Intro */
-.membership-intro {
+/* Section Intro */
+.section__intro {
   text-align: center;
   font-size: 1.8rem;
   color: var(--organic-gold);
@@ -34,32 +31,32 @@
   font-weight: 600;
 }
 
-.membership-intro p {
+.section__intro p {
   margin-bottom: 1.5rem;
   line-height: 1.6;
   text-align: center !important;
   text-shadow: 0 0 10px rgba(251, 176, 22, 0.3);
 }
 
+
 /* Service Panels */
-.service-panels {
+.service-panel__container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--panel-gap);
-  margin: 40px 20px;
-  width: calc(100% - 40px);
+  margin: var(--space-xl) var(--space-md);
+  width: calc(100% - var(--space-xl));
   max-width: 3200px;
 }
 
 .service-panel {
-  --panel-padding: 40px;
   --border-gradient-height: 3px;
   --hover-transform: -5px;
-  
+
   background: rgba(6, 21, 31, 0.6);
   border: 1px solid var(--tech-azure);
   border-radius: 12px;
-  padding: var(--panel-padding);
+  padding: var(--space-xl);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
@@ -83,7 +80,7 @@
   box-shadow: 0 10px 20px rgba(4, 160, 178, 0.2);
 }
 
-.service-panel h3 {
+.service-panel__heading {
   color: var(--organic-gold);
   font-size: 1.5rem;
   margin-bottom: 1rem;
@@ -92,7 +89,7 @@
   text-align: center;
 }
 
-.service-panel h3::after {
+.service-panel__heading::after {
   content: "";
   position: absolute;
   bottom: -5px;
@@ -104,13 +101,13 @@
   opacity: 0.7;
 }
 
-.service-panel p {
+.service-panel__text {
   font-size: 0.95rem;
 }
 
-@media (max-width: 768px) {
-  .service-panels {
+@media (max-width: var(--breakpoint-md)) {
+  .service-panel__container {
     grid-template-columns: 1fr;
-    padding: 0 1rem;
+    padding: 0 var(--space-md);
   }
 }

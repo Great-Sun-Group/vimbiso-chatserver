@@ -1,0 +1,88 @@
+/* Text with Image Left Section */
+.section--with-image.section--image-left {
+  position: relative;
+}
+
+.section--with-image.section--image-left::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to left,
+    rgba(6, 21, 31, 0.85) 50%,
+    rgba(6, 21, 31, 0.4) 100%
+  );
+  z-index: 1;
+}
+
+.section--with-image.section--image-left .section__content {
+  margin-left: auto;
+  margin-right: 0;
+  /* Asymmetric padding: grows faster on left side */
+  padding-left: max(var(--space-3xl), calc((100% - 2000px) / 2 + var(--space-3xl))); /* Faster growth */
+  padding-right: max(
+    var(--space-3xl),
+    calc((100% - 2000px) / 4 + var(--space-3xl))
+  ); /* Slower growth */
+  text-align: right;
+}
+
+.section--with-image.section--image-left h2::after {
+  right: 0;
+  left: auto;
+}
+
+.section--with-image.section--image-left ul {
+  padding-left: var(--space-xl);
+  padding-right: 0;
+}
+
+.section--with-image.section--image-left li {
+  text-align: right;
+  position: relative;
+  padding-left: var(--space-xl);
+}
+
+.section--with-image.section--image-left li::before {
+  right: auto;
+  left: 0;
+  background: var(--tech-azure);
+}
+
+@media (max-width: var(--breakpoint-md)) {
+  .section--with-image.section--image-left::before {
+    background: linear-gradient(
+      to right,
+      rgba(6, 21, 31, 0.85),
+      rgba(6, 21, 31, 0.85)
+    );
+  }
+
+  .section--with-image.section--image-left .section__content {
+    margin: 0 auto;
+    padding: var(--space-xl);
+    text-align: center;
+  }
+
+  .section--with-image.section--image-left h2::after {
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .section--with-image.section--image-left ul {
+    padding-left: var(--space-xl);
+    padding-right: 0;
+  }
+
+  .section--with-image.section--image-left li {
+    text-align: left;
+    padding-left: 0;
+  }
+
+  .section--with-image.section--image-left li::before {
+    left: -1.5rem;
+  }
+}
