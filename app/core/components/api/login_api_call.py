@@ -120,8 +120,8 @@ class LoginApiCall(ApiComponent):
                 member = dashboard.get("member", {})
                 member_tier = member.get("memberTier")
 
-                # For tier 5, show multi-account dashboard
-                if member_tier == 5:
+                # For tier >= 3, show multi-account dashboard
+                if member_tier >= 3:
                     self.set_result("send_multi_dashboard")
                     return ValidationResult.success(result)
 
