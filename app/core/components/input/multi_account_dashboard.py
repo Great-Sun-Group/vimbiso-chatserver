@@ -1,6 +1,6 @@
 """Multi-account dashboard component
 
-This component handles displaying the multi-account dashboard for memberTier=5 users.
+This component handles displaying the multi-account dashboard for memberTier >= 3 users.
 Allows selection of accounts to transition into specific account flows.
 """
 
