@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VimbisoPay Flyer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Variables */
+        :root {
+            --dark-blue: #06151f;
+            --tech-azure: #04a0b2;
+            --organic-gold: #fbb016;
+            --text-white: #ffffff;
+            --dark-overlay: rgba(6, 21, 31, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        /* Flyer container - A6 size (105mm × 148mm) */
+        .flyer {
+            width: 105mm;
+            height: 148mm;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        /* Background image */
+        .background {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('images/market1-1200w.jpg');
+            background-size: cover;
+            background-position: 96% top;
+            filter: brightness(0.8);
+            z-index: 1;
+        }
+
+        /* Dark overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-overlay);
+            z-index: 2;
+        }
+
+        /* Content container */
+        .content {
+            position: relative;
+            z-index: 3;
+            padding: 10mm;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Logo */
+        .logo {
+            width: 70mm;
+            margin: 0 auto 3mm;
+        }
+
+        /* Tagline */
+        .tagline {
+            text-align: center;
+            font-size: 5.5mm;
+            font-weight: 700;
+            margin-bottom: 6mm;
+            color: var(--tech-azure);
+        }
+
+        /* Steps section */
+        .steps-section {
+            margin-bottom: 5mm;
+        }
+
+        .steps-section h2 {
+            font-size: 6mm;
+            margin-bottom: 4mm;
+            color: var(--organic-gold);
+            text-align: center;
+        }
+
+        /* Step cards grid */
+        .step-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3mm;
+            margin-bottom: 5mm;
+        }
+
+        .step-card {
+            background-color: rgba(6, 21, 31, 0.5);
+            border: 1px solid var(--tech-azure);
+            border-radius: 2mm;
+            padding: 2mm;
+            position: relative;
+            min-height: 18mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -3mm;
+            left: -3mm;
+            width: 7mm;
+            height: 7mm;
+            background-color: var(--tech-azure);
+            color: var(--text-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 4mm;
+        }
+
+        .step-text {
+            color: var(--text-white);
+            font-size: 3mm;
+            text-align: center;
+            padding: 0 1mm;
+            line-height: 1.3;
+        }
+
+        .phone-number {
+            color: var(--tech-azure);
+            font-weight: bold;
+        }
+
+        /* Final paragraph */
+        .final-info {
+            font-size: 4mm;
+            line-height: 1.4;
+            color: var(--organic-gold);
+            text-align: center;
+            padding: 0 2mm;
+            margin-top: auto;
+            padding-top: 5mm;
+        }
+
+        /* Print instructions - won't be visible in the final image */
+        .print-instructions {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="flyer">
+        <div class="background"></div>
+        <div class="overlay"></div>
+        <div class="content">
+            <img src="images/logo.png" alt="VimbisoPay Logo" class="logo">
+            <div class="tagline">Small change and payments<br>for Zimbabwe</div>
+
+            <div class="pricing" style="text-align: center; color: var(--organic-gold); margin-bottom: 6mm;">
+                <div style="font-size: 4.2mm; font-weight: 600;">Send $10/day for free</div>
+                <div style="font-size: 3.5mm; margin-top: 1mm;">Unlimited transactions for $1/month</div>
+            </div>
+
+            <div class="steps-section">
+
+                <div class="step-cards">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <div class="step-text">
+                            Send "Hi" on WhatsApp to <span class="phone-number">263 785 304 448</span> to become a member.
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <div class="step-text">
+                            Purchase a secured credex balance with cash or mobile money.
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <div class="step-text">
+                            When your customers need a few cents or dollars in change, send it from your balance.
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <div class="step-text">
+                            Accept secured credex back when your customers owe you change.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="final-info">
+                    Once you and your customers are comfortable using VimbisoPay, you can start accepting it for payments of any amount.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-instructions">
+        <h3>Print Instructions:</h3>
+        <p>1. Take a screenshot or use browser tools to save this as an image (PNG or JPG)</p>
+        <p>2. Open the image in a document editor that supports 4-on-a-page printing</p>
+        <p>3. Print on A4 paper with 4-up layout (2×2)</p>
+    </div>
+</body>
+</html>
