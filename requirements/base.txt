@@ -36,5 +36,5 @@ idna==3.10
 importlib_metadata==8.6.1
 Markdown==3.7
 sqlparse==0.5.3
-typing_extensions==4.12.2
+typing_extensions==4.13.1
 zipp==3.21.0
