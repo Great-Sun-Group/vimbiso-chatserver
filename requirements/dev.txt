@@ -5,8 +5,8 @@ black==25.1.0
 flake8==7.1.2
 pytest==8.3.5
 isort==6.0.1
-pytest-django==4.10.0
-pytest-cov==6.0.0
+pytest-django==4.11.1
+pytest-cov==6.1.1
 mypy==1.15.0
 django-debug-toolbar==5.1.0
 django-browser-reload==1.18.0
