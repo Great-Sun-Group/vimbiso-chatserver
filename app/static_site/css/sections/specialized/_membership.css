@@ -105,9 +105,15 @@
   font-size: 0.95rem;
 }
 
-@media (max-width: var(--breakpoint-md)) {
+@media (max-width: 768px) {
   .service-panel__container {
     grid-template-columns: 1fr;
-    padding: 0 var(--space-md);
+    gap: 2rem;
+    margin: var(--space-xl) 0;
+    width: 100%;
+  }
+
+  .service-panel {
+    margin-bottom: var(--space-md);
   }
 }
