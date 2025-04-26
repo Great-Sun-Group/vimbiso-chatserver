@@ -192,8 +192,8 @@ class AmountInput(InputComponent):
             member = dashboard.get("member", {})
             member_tier = member.get("memberTier")
 
-            # Skip balance check for tier 5 members
-            if member_tier == 5:
+            # Skip balance check for tier >= 5 members
+            if member_tier >= 5:
                 # Store validated amount and denom
                 self.update_data({
                     "amount": str(amount),
