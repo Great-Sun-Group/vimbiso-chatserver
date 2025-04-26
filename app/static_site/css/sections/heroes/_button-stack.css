@@ -1,9 +1,0 @@
-/* Vertical button stack for hero actions */
-.hero__actions {
-  flex-direction: column;
-  align-items: center;
-}
-
-.hero__actions a + a {
-  margin-top: 10px;
-}
