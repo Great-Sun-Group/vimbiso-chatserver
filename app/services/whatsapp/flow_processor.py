@@ -1,17 +1,73 @@
 """WhatsApp-specific flow processor implementation"""
 
 import logging
+import re
 from typing import Any, Dict
 
 from core.error.exceptions import ComponentException
 from core.flow.processor import FlowProcessor
+from core.messaging.utils import get_recipient
 from core.messaging.types import InteractiveType, MessageType
+from .handlers.verify_otp_handler import VerifyOTPHandler
 
 logger = logging.getLogger(__name__)
 
 
 class WhatsAppFlowProcessor(FlowProcessor):
     """WhatsApp implementation of flow processor"""
+
+    def __init__(self, messaging_service, state_manager):
+        """Initialize with messaging service and state manager"""
+        super().__init__(messaging_service, state_manager)
+        # Initialize the VerifyOTPHandler
+        self.verify_handler = VerifyOTPHandler()
+
+    def process_message(self, payload: Dict[str, Any]) -> Any:
+        """Process message through flow framework or direct handlers
+
+        Args:
+            payload: Raw message payload
+
+        Returns:
+            Any: Response message
+        """
+        try:
+            # Extract message data using channel-specific implementation
+            extracted_data = self._extract_message_data(payload)
+            if not extracted_data:
+                logger.debug("No valid message data extracted")
+                return None
+
+            # Initialize channel state
+            channel_info = extracted_data.get("channel")
+            if channel_info:
+                self.state_manager.initialize_channel(
+                    channel_type=channel_info["type"],
+                    channel_id=channel_info["identifier"],
+                    mock_testing=channel_info.get("mock_testing", False)
+                )
+
+            # Set message in state
+            message = extracted_data.get("message")
+            if not message:
+                logger.debug("No valid message content")
+                return None
+
+            self.state_manager.set_incoming_message(message)
+
+            # Check if this is a verification message
+            if (message.get("type") == MessageType.TEXT.value and
+                message.get("text", {}).get("is_verification", False)):
+
+                logger.info("Handling verification message")
+                message_text = message.get("text", {}).get("body", "")
+                channel_id = self.state_manager.get_channel_id()
+
+                # Process with VerifyOTPHandler
+                return self.verify_handler.handle_message(message_text, channel_id, self.state_manager)
+
+            # For non-verification messages, use the parent class implementation
+            return super().process_message(payload)
 
     def _extract_message_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Extract message data from WhatsApp payload
@@ -102,12 +158,31 @@ class WhatsAppFlowProcessor(FlowProcessor):
             if message_type == "text":
                 # Handle text messages
                 text_content = message.get("text", {})
+                message_body = text_content.get("body", "")
+
+                # Check if this is a verification message (starts with VERIFY)
+                if re.match(r'^verify\s+', message_body, re.IGNORECASE):
+                    logger.info("Detected OTP verification message")
+                    # Mark it as a verification message
+                    return {
+                        "channel": channel_info,
+                        "message": {
+                            "type": MessageType.TEXT.value,
+                            "text": {
+                                "body": message_body,
+                                "is_verification": True
+                            },
+                            "id": message_id
+                        }
+                    }
+
+                # Regular text message
                 return {
                     "channel": channel_info,
                     "message": {
                         "type": MessageType.TEXT.value,
                         "text": {
-                            "body": text_content.get("body", "")
+                            "body": message_body
                         },
                         "id": message_id
                     }
