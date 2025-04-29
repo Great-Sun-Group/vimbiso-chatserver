@@ -6,7 +6,6 @@ from typing import Any, Dict
 
 from core.error.exceptions import ComponentException
 from core.flow.processor import FlowProcessor
-from core.messaging.utils import get_recipient
 from core.messaging.types import InteractiveType, MessageType
 from .handlers.verify_otp_handler import VerifyOTPHandler
 
@@ -56,18 +55,21 @@ class WhatsAppFlowProcessor(FlowProcessor):
             self.state_manager.set_incoming_message(message)
 
             # Check if this is a verification message
-            if (message.get("type") == MessageType.TEXT.value and
-                message.get("text", {}).get("is_verification", False)):
+            if (message.get("type") == MessageType.TEXT.value and message.get("text", {}).get("is_verification", False)):
 
                 logger.info("Handling verification message")
                 message_text = message.get("text", {}).get("body", "")
                 channel_id = self.state_manager.get_channel_id()
 
-                # Process with VerifyOTPHandler
-                return self.verify_handler.handle_message(message_text, channel_id, self.state_manager)
+                # Process with VerifyOTPHandler - run async method in sync context
+                import asyncio
+                return asyncio.run(self.verify_handler.handle_message(message_text, channel_id, self.state_manager))
 
             # For non-verification messages, use the parent class implementation
             return super().process_message(payload)
+        except Exception as e:
+            logger.error(f"Error processing WhatsApp message: {str(e)}")
+            raise
 
     def _extract_message_data(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Extract message data from WhatsApp payload

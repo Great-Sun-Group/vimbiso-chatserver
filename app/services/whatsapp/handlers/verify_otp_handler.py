@@ -6,21 +6,22 @@ to Credex Core for validation.
 """
 
 import logging
-import re
-import aiohttp
 import os
-from typing import Dict, Any, Optional
+import re
+from typing import Any, Dict, Optional
 
+import aiohttp
 from core.error.exceptions import ComponentException, SystemException
 from core.state.interface import StateManagerInterface
-from ..types import WhatsAppMessage
+
 from ..base_handler import format_error_response
+from ..types import WhatsAppMessage
 
 logger = logging.getLogger(__name__)
 
 # Get API URL from environment or use default
-CREDEX_API_URL = os.getenv('CREDEX_API_URL', 'http://localhost:3000')
-API_KEY = os.getenv('CREDEX_API_KEY', '')
+CREDEX_API_URL = os.getenv('MYCREDEX_APP_URL', 'https://dev.mycredex.dev')
+API_KEY = os.getenv('CLIENT_API_KEY', '')
 
 
 class VerifyOTPHandler:
