@@ -7,6 +7,7 @@ from typing import Any, Dict
 from core.error.exceptions import ComponentException
 from core.flow.processor import FlowProcessor
 from core.messaging.types import InteractiveType, MessageType
+
 from .handlers.verify_otp_handler import VerifyOTPHandler
 
 logger = logging.getLogger(__name__)
@@ -52,18 +53,107 @@ class WhatsAppFlowProcessor(FlowProcessor):
                 logger.debug("No valid message content")
                 return None
 
+            # Check if message has already been processed
+            message_id = message.get("id")
+            if message_id and self.state_manager.is_message_processed(message_id):
+                logger.info(f"Skipping already processed message: {message_id}")
+                return None
+
+            # Mark message as processed to prevent duplicate processing
+            if message_id:
+                self.state_manager.mark_message_processed(message_id)
+
             self.state_manager.set_incoming_message(message)
 
             # Check if this is a verification message
             if (message.get("type") == MessageType.TEXT.value and message.get("text", {}).get("is_verification", False)):
+                try:
+                    logger.info("Handling verification message")
+                    message_text = message.get("text", {}).get("body", "")
+                    channel_id = self.state_manager.get_channel_id()
 
-                logger.info("Handling verification message")
-                message_text = message.get("text", {}).get("body", "")
-                channel_id = self.state_manager.get_channel_id()
+                    # Get OTP from message
+                    import re
+                    otp_match = re.search(r'verify\s+(\d+)', message_text, re.IGNORECASE)
+                    if not otp_match:
+                        # Send error response
+                        error_msg = "Could not find a verification code in your message. Please send 'VERIFY' followed by your 6-digit code."
+                        from services.whatsapp.types import WhatsAppMessage
+                        return WhatsAppMessage.create_text(channel_id, f"❌ {error_msg}")
 
-                # Process with VerifyOTPHandler - run async method in sync context
-                import asyncio
-                return asyncio.run(self.verify_handler.handle_message(message_text, channel_id, self.state_manager))
+                    otp = otp_match.group(1).strip()
+
+                    # Validate OTP format (6 digits)
+                    if not otp.isdigit() or len(otp) != 6:
+                        error_msg = "Invalid verification code format. Please send a 6-digit code."
+                        from services.whatsapp.types import WhatsAppMessage
+                        return WhatsAppMessage.create_text(channel_id, f"❌ {error_msg}")
+
+                    # Use synchronous method instead of async
+                    # This is a temporary fix - a better solution would be to make the entire flow async
+                    import os
+
+                    import requests
+
+                    # Get API URL and key from environment
+                    credex_api_url = os.getenv('MYCREDEX_APP_URL', 'https://dev.mycredex.dev')
+                    api_key = os.getenv('CLIENT_API_KEY', '')
+
+                    # Log environment variables for debugging
+                    logger.info(f"Using MYCREDEX_APP_URL: {credex_api_url}")
+                    logger.info(f"CLIENT_API_KEY set: {bool(api_key)}")
+
+                    # Extract phone number from channel_id
+                    phone = channel_id.replace('whatsapp:', '')
+
+                    # Send verification request
+                    endpoint = f"{credex_api_url}/verify/validateChatbotOtp"
+                    headers = {
+                        "Content-Type": "application/json",
+                        "x-client-api-key": api_key
+                    }
+                    payload = {
+                        "otp": otp,
+                        "phone": phone,
+                        "source": "chatbot"
+                    }
+
+                    logger.info(f"Sending OTP verification request to: {endpoint}")
+                    logger.info(f"Request payload: {payload}")
+
+                    try:
+                        response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+                        logger.info(f"Response status code: {response.status_code}")
+                        logger.info(f"Response content: {response.text}")
+                        response_data = response.json()
+                        logger.info(f"Response data: {response_data}")
+                    except Exception as e:
+                        logger.error(f"Error making request to credex-core: {str(e)}")
+                        raise
+
+                    if response.status_code == 200:
+                        logger.info("OTP verification successful")
+                        from services.whatsapp.types import WhatsAppMessage
+                        return WhatsAppMessage.create_text(
+                            channel_id,
+                            "✅ Verification successful! You can now return to the app."
+                        )
+                    else:
+                        error_message = response_data.get("message", "Unknown error")
+                        logger.error(f"OTP verification failed: {error_message}")
+                        from services.whatsapp.types import WhatsAppMessage
+                        return WhatsAppMessage.create_text(
+                            channel_id,
+                            f"❌ Verification failed: {error_message}"
+                        )
+                except Exception as e:
+                    # Log the full exception for debugging
+                    logger.exception(f"Error in verification flow: {str(e)}")
+                    from services.whatsapp.types import WhatsAppMessage
+                    return WhatsAppMessage.create_text(
+                        channel_id,
+                        "❌ An error occurred during verification. Please try again later."
+                    )
 
             # For non-verification messages, use the parent class implementation
             return super().process_message(payload)
@@ -145,15 +235,8 @@ class WhatsAppFlowProcessor(FlowProcessor):
                 "mock_testing": bool(value.get("metadata", {}).get("mock_testing", False))
             }
 
-            # Check if message has already been processed
+            # Get message ID
             message_id = message.get("id")
-            if message_id and self.state_manager.is_message_processed(message_id):
-                logger.info(f"Skipping already processed message: {message_id}")
-                return {}
-
-            # Mark message as processed to prevent duplicate processing
-            if message_id:
-                self.state_manager.mark_message_processed(message_id)
 
             # Extract message content
             message_type = message.get("type")
