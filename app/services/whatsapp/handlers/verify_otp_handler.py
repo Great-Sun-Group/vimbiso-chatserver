@@ -115,7 +115,7 @@ class VerifyOTPHandler:
             Dict[str, Any]: Verification result
         """
         try:
-            endpoint = f"{CREDEX_API_URL}/api/Member/verify/validateChatbotOtp"
+            endpoint = f"{CREDEX_API_URL}/verify/validateChatbotOtp"
             headers = {
                 "Content-Type": "application/json",
                 "x-client-api-key": API_KEY
