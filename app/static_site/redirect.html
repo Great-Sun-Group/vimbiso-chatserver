@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to VimbisoPay App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            margin-bottom: 20px;
+        }
+        .logo img {
+            max-width: 200px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            margin-top: 20px;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <!-- Replace with your actual logo -->
+            <img src="/images/logo.png" alt="VimbisoPay Logo">
+        </div>
+        <h1>Redirecting to VimbisoPay App</h1>
+        <p>You'll be redirected to the VimbisoPay app automatically in a moment.</p>
+        <p>If you're not redirected automatically, please tap the button below:</p>
+        <a href="#" id="openApp" class="button">Open VimbisoPay App</a>
+        <p class="loading">Redirecting...</p>
+    </div>
+
+    <script>
+        // Function to get URL parameters
+        function getUrlParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const pairs = queryString.split('&');
+
+            for (const pair of pairs) {
+                const [key, value] = pair.split('=');
+                if (key && value) {
+                    params[decodeURIComponent(key)] = decodeURIComponent(value);
+                }
+            }
+
+            return params;
+        }
+
+        // Function to build the app deep link
+        function buildDeepLink() {
+            const params = getUrlParams();
+            let deepLink = params.dest || 'vimbisopay://';
+
+            // Add parameters to the deep link
+            const paramKeys = Object.keys(params).filter(key => key !== 'dest');
+            if (paramKeys.length > 0) {
+                // Check if the deep link already has parameters
+                const separator = deepLink.includes('?') ? '&' : '?';
+
+                // Add each parameter
+                const paramString = paramKeys
+                    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+                    .join('&');
+
+                deepLink += separator + paramString;
+            }
+
+            return deepLink;
+        }
+
+        // Function to try opening the app
+        function openApp() {
+            const deepLink = buildDeepLink();
+            console.log('Opening deep link:', deepLink);
+
+            // Try to open the app
+            window.location.href = deepLink;
+
+            // Set a timeout to check if the app was opened
+            setTimeout(function() {
+                // If we're still here after the timeout, the app might not be installed
+                // You could redirect to the app store or show a message
+                document.querySelector('.loading').textContent = 'App not opening? You may need to install the VimbisoPay app first, or open it manually and click to verify.';
+            }, 2000);
+        }
+
+        // Set the button's href
+        document.getElementById('openApp').href = buildDeepLink();
+
+        // Add click event listener
+        document.getElementById('openApp').addEventListener('click', function(e) {
+            e.preventDefault();
+            openApp();
+        });
+
+        // Try to open the app automatically when the page loads
+        window.onload = function() {
+            // Short delay to ensure the page is fully loaded
+            setTimeout(openApp, 500);
+        };
+    </script>
+</body>
+</html>
