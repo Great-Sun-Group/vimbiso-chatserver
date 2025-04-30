@@ -151,12 +151,8 @@ class VerifyOTPApiCall(ApiComponent):
 
             if response.status_code == 200:
                 logger.info("OTP verification successful")
-                # Use direct app deep link for newer WhatsApp versions
-                deep_link = f"vimbisopay://verification-complete?phone={phone}&status=success"
                 self._send_response(
-                    f"✅ Verification successful!\n\n"
-                    f"Tap here to return to the app: {deep_link}\n\n"
-                    f"If the link above doesn't work, just go back to the VimbisoPay app to continue."
+                    "✅ Verification successful! Head back to the VimbisoPay app to continue."
                 )
                 self.set_result("verification_success")
                 return ValidationResult.success(response_data)
