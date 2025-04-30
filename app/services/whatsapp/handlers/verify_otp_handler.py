@@ -71,13 +71,9 @@ class VerifyOTPHandler:
             verification_result = await VerifyOTPHandler.verify_otp_with_credex(otp, phone)
 
             if verification_result.get("success"):
-                # Use direct app deep link for newer WhatsApp versions
-                deep_link = f"vimbisopay://verification-complete?phone={phone}&status=success"
                 return WhatsAppMessage.create_text(
                     channel_id,
-                    f"✅ Verification successful!\n\n"
-                    f"Tap here to return to the app: {deep_link}\n\n"
-                    f"If the link above doesn't work, just go back to the VimbisoPay app to continue."
+                    "✅ Verification successful! Head back to the VimbisoPay app to continue."
                 )
             else:
                 error_message = verification_result.get("message", "Unknown error")
