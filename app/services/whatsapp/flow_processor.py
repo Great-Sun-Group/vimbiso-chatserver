@@ -68,87 +68,43 @@ class WhatsAppFlowProcessor(FlowProcessor):
             # Check if this is a verification message
             if (message.get("type") == MessageType.TEXT.value and message.get("text", {}).get("is_verification", False)):
                 try:
-                    logger.info("Handling verification message")
-                    message_text = message.get("text", {}).get("body", "")
+                    logger.info("Detected OTP verification message - routing to verification component")
+
+                    # Clear any existing state to start fresh
+                    channel_type = self.state_manager.get_channel_type()
                     channel_id = self.state_manager.get_channel_id()
+                    mock_testing = self.state_manager.get_state_value("mock_testing", False)
 
-                    # Get OTP from message
-                    import re
-                    otp_match = re.search(r'verify\s+(\d+)', message_text, re.IGNORECASE)
-                    if not otp_match:
-                        # Send error response
-                        error_msg = "Could not find a verification code in your message. Please send 'VERIFY' followed by your 6-digit code."
-                        from services.whatsapp.types import WhatsAppMessage
-                        return WhatsAppMessage.create_text(channel_id, f"❌ {error_msg}")
+                    # Clear state but preserve channel info and message
+                    self.state_manager.clear_all_state()
 
-                    otp = otp_match.group(1).strip()
+                    # Reinitialize channel
+                    self.state_manager.initialize_channel(
+                        channel_type=channel_type,
+                        channel_id=channel_id,
+                        mock_testing=mock_testing
+                    )
 
-                    # Validate OTP format (6 digits)
-                    if not otp.isdigit() or len(otp) != 6:
-                        error_msg = "Invalid verification code format. Please send a 6-digit code."
-                        from services.whatsapp.types import WhatsAppMessage
-                        return WhatsAppMessage.create_text(channel_id, f"❌ {error_msg}")
+                    # Restore message
+                    self.state_manager.set_incoming_message(message)
 
-                    # Use synchronous method instead of async
-                    # This is a temporary fix - a better solution would be to make the entire flow async
-                    import os
+                    # Transition to OTP verification flow
+                    self.state_manager.transition_flow(
+                        path="verify_otp",
+                        component="VerifyOTPApiCall"
+                    )
 
-                    import requests
+                    # Process the component
+                    from core.flow.component_manager import process_component
+                    process_component("verify_otp", "VerifyOTPApiCall", self.state_manager, depth=0)
 
-                    # Get API URL and key from environment
-                    credex_api_url = os.getenv('MYCREDEX_APP_URL', 'https://dev.mycredex.dev')
-                    api_key = os.getenv('CLIENT_API_KEY', '')
+                    # No need to return a message - the component handles messaging
+                    return None
 
-                    # Log environment variables for debugging
-                    logger.info(f"Using MYCREDEX_APP_URL: {credex_api_url}")
-                    logger.info(f"CLIENT_API_KEY set: {bool(api_key)}")
-
-                    # Extract phone number from channel_id
-                    phone = channel_id.replace('whatsapp:', '')
-
-                    # Send verification request
-                    endpoint = f"{credex_api_url}/verify/validateChatbotOtp"
-                    headers = {
-                        "Content-Type": "application/json",
-                        "x-client-api-key": api_key
-                    }
-                    payload = {
-                        "otp": otp,
-                        "phone": phone,
-                        "source": "chatbot"
-                    }
-
-                    logger.info(f"Sending OTP verification request to: {endpoint}")
-                    logger.info(f"Request payload: {payload}")
-
-                    try:
-                        response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
-                        logger.info(f"Response status code: {response.status_code}")
-                        logger.info(f"Response content: {response.text}")
-                        response_data = response.json()
-                        logger.info(f"Response data: {response_data}")
-                    except Exception as e:
-                        logger.error(f"Error making request to credex-core: {str(e)}")
-                        raise
-
-                    if response.status_code == 200:
-                        logger.info("OTP verification successful")
-                        from services.whatsapp.types import WhatsAppMessage
-                        return WhatsAppMessage.create_text(
-                            channel_id,
-                            "✅ Verification successful! You can now return to the app."
-                        )
-                    else:
-                        error_message = response_data.get("message", "Unknown error")
-                        logger.error(f"OTP verification failed: {error_message}")
-                        from services.whatsapp.types import WhatsAppMessage
-                        return WhatsAppMessage.create_text(
-                            channel_id,
-                            f"❌ Verification failed: {error_message}"
-                        )
                 except Exception as e:
                     # Log the full exception for debugging
                     logger.exception(f"Error in verification flow: {str(e)}")
+                    channel_id = self.state_manager.get_channel_id()
                     from services.whatsapp.types import WhatsAppMessage
                     return WhatsAppMessage.create_text(
                         channel_id,
