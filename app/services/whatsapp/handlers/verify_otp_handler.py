@@ -71,12 +71,13 @@ class VerifyOTPHandler:
             verification_result = await VerifyOTPHandler.verify_otp_with_credex(otp, phone)
 
             if verification_result.get("success"):
-                # Use the redirect.html page directly with the full path
-                # This should work regardless of URL configuration
-                deep_link = f"https://vimbisopay.africa/redirect.html?dest=vimbisopay://verification-complete&phone={phone}&status=success"
+                # Use direct app deep link for newer WhatsApp versions
+                deep_link = f"vimbisopay://verification-complete?phone={phone}&status=success"
                 return WhatsAppMessage.create_text(
                     channel_id,
-                    f"✅ Verification successful! You can now return to the app.\n\nTap here to return automatically: {deep_link}"
+                    f"✅ Verification successful!\n\n"
+                    f"Tap here to return to the app: {deep_link}\n\n"
+                    f"If the link above doesn't work, just go back to the VimbisoPay app to continue."
                 )
             else:
                 error_message = verification_result.get("message", "Unknown error")
