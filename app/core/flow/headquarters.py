@@ -149,3 +149,11 @@ def get_next_component(
                 return "cancel_offer", "OfferListDisplay"  # Return to list for more offers
             if component_result == "send_dashboard":
                 return "account", "AccountDashboard"  # Return to dashboard when done
+
+        # OTP verification path
+        case ("verify_otp", "VerifyOTPApiCall"):
+            if component_result == "verification_success":
+                return "login", "Greeting"  # Return to login flow after successful verification
+            if component_result == "verification_failed":
+                return "login", "Greeting"  # Return to login flow after failed verification
+            return "login", "Greeting"  # Default to login flow for any other result
