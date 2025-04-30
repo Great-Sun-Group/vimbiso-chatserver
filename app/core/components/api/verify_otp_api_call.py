@@ -153,6 +153,7 @@ class VerifyOTPApiCall(ApiComponent):
                 logger.info("OTP verification successful")
                 # Create a web URL that will redirect to the app
                 # WhatsApp will make this URL clickable (unlike custom URL schemes)
+                # Using the /redirect path which is now properly configured in urls.py
                 deep_link = f"https://vimbisopay.africa/redirect?dest=vimbisopay://verification-complete&phone={phone}&status=success"
                 self._send_response(f"✅ Verification successful! You can now return to the app.\n\nTap here to return automatically: {deep_link}")
                 self.set_result("verification_success")
