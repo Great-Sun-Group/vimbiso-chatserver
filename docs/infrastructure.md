@@ -1,3 +1,0 @@
-# Infrastructure & Operations
-
-placeholder

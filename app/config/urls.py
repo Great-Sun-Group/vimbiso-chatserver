@@ -25,7 +25,10 @@ urlpatterns = [
     # Add specific pattern for HTML files
     re_path(r'^(?P<path>.*\.html)$', serve, {'document_root': STATIC_SITE_ROOT}),
 
+    # Specific pattern for the redirect page
+    re_path(r'^redirect/?$', serve, {'path': 'redirect.html', 'document_root': STATIC_SITE_ROOT}),
+
     # Serve index.html at root and any unmatched paths
     re_path(r'^$', serve, {'path': 'index.html', 'document_root': STATIC_SITE_ROOT}),
-    re_path(r'^(?!bot/|health/).*$', serve, {'path': 'index.html', 'document_root': STATIC_SITE_ROOT}),
+    re_path(r'^(?!bot/|health/|redirect/).*$', serve, {'path': 'index.html', 'document_root': STATIC_SITE_ROOT}),
 ]

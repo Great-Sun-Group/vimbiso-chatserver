@@ -35,6 +35,7 @@ from .api.login_api_call import LoginApiCall
 from .api.onboard_member_api_call import OnBoardMemberApiCall
 from .api.upgrade_membertier_api_call import UpgradeMembertierApiCall
 from .api.validate_account_api_call import ValidateAccountApiCall
+from .api.verify_otp_api_call import VerifyOTPApiCall
 
 # Confirm components
 from .confirm.confirm_offer_secured import ConfirmOfferSecured
@@ -71,6 +72,7 @@ __all__ = [
     "OnBoardMemberApiCall",
     "UpgradeMembertierApiCall",
     "ValidateAccountApiCall",
+    "VerifyOTPApiCall",
 
     # Confirm components
     "ConfirmOfferSecured",
