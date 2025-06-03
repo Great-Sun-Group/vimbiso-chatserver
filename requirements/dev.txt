@@ -7,13 +7,13 @@ pytest==8.3.5
 isort==6.0.1
 pytest-django==4.11.1
 pytest-cov==6.1.1
-mypy==1.15.0
 django-debug-toolbar==5.2.0
+mypy==1.16.0
 django-browser-reload==1.18.0
 ipython==9.0.2
 watchdog==6.0.0  # For mock WhatsApp server hot reload
 
 # Type stubs for better development experience
-types-requests==2.32.0.20250328
+types-requests==2.32.0.20250602
 types-urllib3==1.26.25.14
 django-stubs==5.1.3
