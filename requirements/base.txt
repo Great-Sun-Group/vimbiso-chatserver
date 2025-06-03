@@ -38,4 +38,4 @@ importlib_metadata==8.6.1
 Markdown==3.8
 sqlparse==0.5.3
 typing_extensions==4.13.2
-zipp==3.21.0
+zipp==3.22.0
