@@ -106,7 +106,6 @@
                 "iam:GetInstanceProfile",
                 "iam:AddRoleToInstanceProfile",
                 "iam:RemoveRoleFromInstanceProfile",
-                "iam:CreateServiceLinkedRole",
                 "iam:CreatePolicy",
                 "iam:DeletePolicy",
                 "iam:GetPolicy",
@@ -119,6 +118,21 @@
                 "iam:UntagPolicy"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "iam:AWSServiceName": [
+                        "ecs.application-autoscaling.amazonaws.com",
+                        "application-autoscaling.amazonaws.com"
+                    ]
+                }
+            }
         },
         {
             "Effect": "Allow",
