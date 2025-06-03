@@ -172,8 +172,8 @@ resource "aws_ecs_service" "app" {
 
 # Create service-linked role for Application Auto Scaling if it doesn't exist
 resource "aws_iam_service_linked_role" "autoscaling" {
-  aws_service_name = "application-autoscaling.amazonaws.com"
-  description      = "Service-linked role for Application Auto Scaling"
+  aws_service_name = "ecs.application-autoscaling.amazonaws.com"
+  description      = "Service-linked role for Application Auto Scaling for ECS"
 
   lifecycle {
     ignore_changes = [
