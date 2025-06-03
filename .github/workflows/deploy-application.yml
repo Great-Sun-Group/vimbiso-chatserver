@@ -3,7 +3,6 @@ name: Deploy Application
 on:
   push:
     branches:
-      - dev
       - prod
       - "*deploy*"
   workflow_dispatch:

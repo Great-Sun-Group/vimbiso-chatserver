@@ -170,6 +170,18 @@ resource "aws_ecs_service" "app" {
   }
 }
 
+# Create service-linked role for Application Auto Scaling if it doesn't exist
+resource "aws_iam_service_linked_role" "autoscaling" {
+  aws_service_name = "application-autoscaling.amazonaws.com"
+  description      = "Service-linked role for Application Auto Scaling"
+
+  lifecycle {
+    ignore_changes = [
+      description,
+    ]
+  }
+}
+
 # Auto Scaling
 resource "aws_appautoscaling_target" "app" {
   max_capacity       = var.max_capacity
@@ -177,6 +189,8 @@ resource "aws_appautoscaling_target" "app" {
   resource_id        = "service/${data.aws_ecs_cluster.main.cluster_name}/${aws_ecs_service.app.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  depends_on = [aws_iam_service_linked_role.autoscaling]
 }
 
 resource "aws_appautoscaling_policy" "cpu" {
