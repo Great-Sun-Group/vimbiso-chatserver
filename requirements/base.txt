@@ -30,7 +30,7 @@ aiohttp==3.12.6  # For async HTTP requests in OTP verification
 
 # Dependencies
 asgiref==3.8.1
-certifi==2025.1.31
+certifi==2025.4.26
 charset-normalizer==3.4.2
 defusedxml==0.7.1
 idna==3.10
