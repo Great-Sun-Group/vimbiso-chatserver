@@ -161,6 +161,32 @@ jobs:
             echo "  Failed Tasks: $FAILED_TASKS"
             echo "  Pending Count: $PENDING_COUNT"
 
+            # Add debugging for why no tasks are starting
+            if [ "$RUNNING_COUNT" -eq 0 ] && [ "$PENDING_COUNT" -eq 0 ] && [ "$DESIRED_COUNT" -gt 0 ]; then
+              echo "DEBUG: Service has desired count but no running or pending tasks. Checking service events..."
+              aws ecs describe-services \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --services "vimbiso-service-$ENVIRONMENT" \
+                --query "services[0].events[0:10]" \
+                --output table
+              echo "DEBUG: Checking for stopped tasks..."
+              RECENT_STOPPED_TASK=$(aws ecs list-tasks \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --service-name "vimbiso-service-$ENVIRONMENT" \
+                --desired-status STOPPED \
+                --query "taskArns[0]" \
+                --output text)
+              if [ "$RECENT_STOPPED_TASK" != "None" ] && [ "$RECENT_STOPPED_TASK" != "" ]; then
+                aws ecs describe-tasks \
+                  --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                  --tasks "$RECENT_STOPPED_TASK" \
+                  --query "tasks[0].{stoppedReason: stoppedReason, containers: containers[].{name: name, reason: reason}}" \
+                  --output json
+              else
+                echo "No stopped tasks found"
+              fi
+            fi
+
             # Get running tasks
             RUNNING_TASKS=$(aws ecs list-tasks \
               --cluster "vimbiso-cluster-$ENVIRONMENT" \
