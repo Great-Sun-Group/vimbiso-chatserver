@@ -168,6 +168,9 @@ resource "aws_ecs_service" "app" {
       desired_count  # Allow autoscaling to manage count
     ]
   }
+
+  # Ensure service starts with at least min_capacity
+  depends_on = [aws_appautoscaling_target.app]
 }
 
 # Auto Scaling
