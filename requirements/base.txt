@@ -26,7 +26,7 @@ requests==2.32.3
 urllib3>=2.0.0,<3.0.0
 watchtower==3.4.0
 PyJWT==2.9.0
-aiohttp==3.12.6  # For async HTTP requests in OTP verification
+aiohttp==3.12.11  # For async HTTP requests in OTP verification
 
 # Dependencies
 asgiref==3.8.1
