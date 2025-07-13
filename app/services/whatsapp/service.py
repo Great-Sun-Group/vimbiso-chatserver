@@ -217,7 +217,7 @@ class WhatsAppMessagingService(BaseMessagingService):
         try:
             # Send and wait for response
             response = requests.post(
-                "http://mock:8001/bot/webhook",
+                "http://vimbiso-mock-whatsapp:8001/bot/webhook",
                 json=whatsapp_message,
                 headers={"Content-Type": "application/json"},
                 timeout=10

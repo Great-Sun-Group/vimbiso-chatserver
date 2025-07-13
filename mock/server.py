@@ -21,7 +21,7 @@ logging.getLogger("http.server").setLevel(logging.WARNING)
 
 # The app endpoints we're testing
 APP_ENDPOINTS = {
-    'local': 'http://app:8000/bot/webhook',
+    'local': 'http://vimbiso-chatserver-app:8000/bot/webhook',
     'development': 'https://dev-vimbiso-chatserver.dailycredcoin.com/bot/webhook',
     'production': 'https://vimbiso-chatserver.vimbisopay.africa/bot/webhook'
 }
