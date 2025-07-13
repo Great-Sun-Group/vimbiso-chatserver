@@ -94,6 +94,26 @@ jobs:
             -backend-config="region=af-south-1" \
             -backend-config="dynamodb_table=${TABLE_NAME}"
 
+      - name: Check and Fix Service Desired Count
+        run: |
+          # Check if service is stuck at desired count 0
+          CURRENT_DESIRED=$(aws ecs describe-services \
+            --cluster "vimbiso-cluster-$ENVIRONMENT" \
+            --services "vimbiso-service-$ENVIRONMENT" \
+            --query 'services[0].desiredCount' \
+            --output text)
+
+          echo "Current desired count: $CURRENT_DESIRED"
+
+          if [ "$CURRENT_DESIRED" = "0" ]; then
+            echo "Service is stuck at desired count 0. Scaling up to minimum capacity..."
+            aws ecs update-service \
+              --cluster "vimbiso-cluster-$ENVIRONMENT" \
+              --service "vimbiso-service-$ENVIRONMENT" \
+              --desired-count 1
+            echo "Service scaled up to desired count 1"
+          fi
+
       - name: Update ECS Service
         env:
           TF_VAR_docker_image: ${{ env.IMAGE }}
@@ -103,7 +123,6 @@ jobs:
           terraform plan -input=false -lock-timeout=20m \
             -target="module.app.aws_ecs_task_definition.app" \
             -target="module.app.aws_ecs_service.app" \
-            -target="module.app.aws_appautoscaling_target.app" \
             -replace="module.app.aws_ecs_task_definition.app" \
             -var="docker_image=${IMAGE}" \
             -var="enable_https=true" \
@@ -160,6 +179,42 @@ jobs:
             echo "  Desired Count: $DESIRED_COUNT"
             echo "  Failed Tasks: $FAILED_TASKS"
             echo "  Pending Count: $PENDING_COUNT"
+
+            # Add debugging for why no tasks are starting
+            if [ "$RUNNING_COUNT" -eq 0 ] && [ "$PENDING_COUNT" -eq 0 ] && [ "$DESIRED_COUNT" -gt 0 ]; then
+              echo "DEBUG: Service has desired count but no running or pending tasks. Checking service events..."
+              aws ecs describe-services \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --services "vimbiso-service-$ENVIRONMENT" \
+                --query "services[0].events[0:10]" \
+                --output table
+              echo "DEBUG: Checking for stopped tasks..."
+              RECENT_STOPPED_TASK=$(aws ecs list-tasks \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --service-name "vimbiso-service-$ENVIRONMENT" \
+                --desired-status STOPPED \
+                --query "taskArns[0]" \
+                --output text)
+              if [ "$RECENT_STOPPED_TASK" != "None" ] && [ "$RECENT_STOPPED_TASK" != "" ]; then
+                aws ecs describe-tasks \
+                  --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                  --tasks "$RECENT_STOPPED_TASK" \
+                  --query "tasks[0].{stoppedReason: stoppedReason, containers: containers[].{name: name, reason: reason}}" \
+                  --output json
+              else
+                echo "No stopped tasks found"
+              fi
+            fi
+
+            # If desired count is 0, force scale up
+            if [ "$DESIRED_COUNT" -eq 0 ]; then
+              echo "WARNING: Desired count is 0. Force scaling up to minimum capacity..."
+              aws ecs update-service \
+                --cluster "vimbiso-cluster-$ENVIRONMENT" \
+                --service "vimbiso-service-$ENVIRONMENT" \
+                --desired-count 1
+              echo "Service scaled up to desired count 1"
+            fi
 
             # Get running tasks
             RUNNING_TASKS=$(aws ecs list-tasks \
