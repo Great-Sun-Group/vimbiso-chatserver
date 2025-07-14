@@ -3,10 +3,10 @@
 # Development Tools
 black==25.1.0
 flake8==7.2.0
-pytest==8.3.5
+pytest==8.4.1
 isort==6.0.1
 pytest-django==4.11.1
-pytest-cov==6.1.1
+pytest-cov==6.2.1
 django-debug-toolbar==5.2.0
 mypy==1.16.0
 django-browser-reload==1.18.0
