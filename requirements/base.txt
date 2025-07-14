@@ -11,7 +11,7 @@ django-environ==0.12.0
 # Database and Caching
 hiredis==3.2.1
 redis==6.2.0
-django-redis==5.4.0  # For Redis cache backend
+django-redis==6.0.0  # For Redis cache backend
 async-timeout==5.0.1
 
 # Utils
