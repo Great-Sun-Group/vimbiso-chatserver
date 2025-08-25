@@ -18,7 +18,7 @@ async-timeout==5.0.1
 python-decouple==3.8
 python-json-logger==3.3.0
 python-logstash==0.4.8
-requests==2.32.3
+requests==2.32.5
 # urllib3 constraint matches requirements from multiple dependencies:
 # - requests requires >=1.21.1<3
 # - types-requests requires >=2
