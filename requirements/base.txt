@@ -1,17 +1,17 @@
 # Core Django
 Django==5.1.7
-djangorestframework==3.16.0
-django-cors-headers==4.7.0
+djangorestframework==3.16.1
+django-cors-headers==4.8.0
 django-filter==25.1
 # Updated to fix CVE-2024-22513 (information disclosure vulnerability)
-djangorestframework-simplejwt==5.5.0
+djangorestframework-simplejwt==5.5.1
 djangorestframework-xml==2.0.0
 django-environ==0.12.0
 
 # Database and Caching
 hiredis==3.2.1
 redis==6.2.0
-django-redis==5.4.0  # For Redis cache backend
+django-redis==6.0.0  # For Redis cache backend
 async-timeout==5.0.1
 
 # Utils
